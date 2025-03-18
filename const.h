@@ -19,16 +19,137 @@
 #define __CONST__
 #include "definitions.h"
 
-#define NETWORKMESSAGE_MAXSIZE 24590
+#define NETWORKMESSAGE_MAXSIZE 65500
+
+
+enum GameFeature {
+	GameProtocolChecksum = 1,
+	GameAccountNames = 2,
+	GameChallengeOnLogin = 3,
+	GamePenalityOnDeath = 4,
+	GameNameOnNpcTrade = 5,
+	GameDoubleFreeCapacity = 6,
+	GameDoubleExperience = 7,
+	GameTotalCapacity = 8,
+	GameSkillsBase = 9,
+	GamePlayerRegenerationTime = 10,
+	GameChannelPlayerList = 11,
+	GamePlayerMounts = 12,
+	GameEnvironmentEffect = 13,
+	GameCreatureEmblems = 14,
+	GameItemAnimationPhase = 15,
+	GameMagicEffectU16 = 16,
+	GamePlayerMarket = 17,
+	GameSpritesU32 = 18,
+	GameTileAddThingWithStackpos = 19,
+	GameOfflineTrainingTime = 20,
+	GamePurseSlot = 21,
+	GameFormatCreatureName = 22,
+	GameSpellList = 23,
+	GameClientPing = 24,
+	GameExtendedClientPing = 25,
+	GameDoubleHealth = 28,
+	GameDoubleSkills = 29,
+	GameChangeMapAwareRange = 30,
+	GameMapMovePosition = 31,
+	GameAttackSeq = 32,
+	GameBlueNpcNameColor = 33,
+	GameDiagonalAnimatedText = 34,
+	GameLoginPending = 35,
+	GameNewSpeedLaw = 36,
+	GameForceFirstAutoWalkStep = 37,
+	GameMinimapRemove = 38,
+	GameDoubleShopSellAmount = 39,
+	GameContainerPagination = 40,
+	GameThingMarks = 41,
+	GameLooktypeU16 = 42,
+	GamePlayerStamina = 43,
+	GamePlayerAddons = 44,
+	GameMessageStatements = 45,
+	GameMessageLevel = 46,
+	GameNewFluids = 47,
+	GamePlayerStateU16 = 48,
+	GameNewOutfitProtocol = 49,
+	GamePVPMode = 50,
+	GameWritableDate = 51,
+	GameAdditionalVipInfo = 52,
+	GameBaseSkillU16 = 53,
+	GameCreatureIcons = 54,
+	GameHideNpcNames = 55,
+	GameSpritesAlphaChannel = 56,
+	GamePremiumExpiration = 57,
+	GameBrowseField = 58,
+	GameEnhancedAnimations = 59,
+	GameOGLInformation = 60,
+	GameMessageSizeCheck = 61,
+	GamePreviewState = 62,
+	GameLoginPacketEncryption = 63,
+	GameClientVersion = 64,
+	GameContentRevision = 65,
+	GameExperienceBonus = 66,
+	GameAuthenticator = 67,
+	GameUnjustifiedPoints = 68,
+	GameSessionKey = 69,
+	GameDeathType = 70,
+	GameIdleAnimations = 71,
+	GameKeepUnawareTiles = 72,
+	GameIngameStore = 73,
+	GameIngameStoreHighlights = 74,
+	GameIngameStoreServiceType = 75,
+	GameAdditionalSkills = 76,
+	GameDistanceEffectU16 = 77,
+	GamePrey = 78,
+	GameDoubleMagicLevel = 79,
+
+	GameExtendedOpcode = 80,
+	GameMinimapLimitedToSingleFloor = 81,
+	GameSendWorldName = 82,
+
+	GameDoubleLevel = 83,
+	GameDoubleSoul = 84,
+	GameDoublePlayerGoodsMoney = 85,
+	GameCreatureWalkthrough = 86,
+	GameDoubleTradeMoney = 87,
+	GameSequencedPackets = 88,
+	GameTibia12Protocol = 89,
+
+	// 90-99 otclientv8 features
+	GameNewWalking = 90,
+	GameSlowerManualWalking = 91,
+
+	GameItemTooltip = 93,
+
+	GameBot = 95,
+	GameBiggerMapCache = 96,
+	GameForceLight = 97,
+	GameNoDebug = 98,
+	GameBotProtection = 99,
+
+	// Custom features for customer
+	GameFasterAnimations = 101,
+	GameCenteredOutfits = 102,
+	GameSendIdentifiers = 103,
+	GameWingsAndAura = 104,
+	GamePlayerStateU32 = 105,
+	GameOutfitShaders = 106,
+
+	// advanced features
+	GamePacketSizeU32 = 110,
+	GamePacketCompression = 111,
+
+	LastGameFeature = 120
+};
 
 enum OperatingSystem_t
 {
 	CLIENTOS_LINUX = 1,
 	CLIENTOS_WINDOWS = 2,
 
+	CLIENTOS_SPECIAL = 4,					  
 	CLIENTOS_OTCLIENT_LINUX = 10,
 	CLIENTOS_OTCLIENT_WINDOWS = 11,
-	CLIENTOS_OTCLIENT_MAC = 12
+	CLIENTOS_OTCLIENT_MAC = 12,
+	CLIENTOS_OTCLIENTV8_WINDOWS = 20 
 };
 
 enum ReportType_t
@@ -109,6 +230,7 @@ enum MagicEffect_t
 	MAGIC_EFFECT_BATS = 66,
 	MAGIC_EFFECT_SMOKE = 67,
 	MAGIC_EFFECT_INSECTS = 68,
+	MAGIC_EFFECT_DRUNK = 1219,
 	MAGIC_EFFECT_DRAGONHEAD = 0x7D0,
 	MAGIC_EFFECT_LAST = MAGIC_EFFECT_DRAGONHEAD,
 
@@ -667,17 +789,43 @@ struct MessageDetails
 #define PSTRG_OUTFITSID_RANGE_START (PSTRG_RESERVED_RANGE_START + 1500)
 #define PSTRG_OUTFITSID_RANGE_SIZE 500
 
-#define NETWORK_CRYPTOHEADER_SIZE 8
+// #define NETWORK_CRYPTOHEADER_SIZE 8
+
+//[2000 - 2500]
+#define PSTRG_AURA_RANGE_START	(PSTRG_RESERVED_RANGE_START + 2000)
+#define PSTRG_AURA_RANGE_SIZE	500
+
+//[2500 - 3000]
+#define PSTRG_WING_RANGE_START (PSTRG_RESERVED_RANGE_START + 2500)
+#define PSTRG_WING_RANGE_SIZE 500
+
+//[3000 - 3500]
+#define PSTRG_SHADER_RANGE_START (PSTRG_RESERVED_RANGE_START + 3000)
+#define PSTRG_SHADER_RANGE_SIZE 500
+
+//[3000 - 3500]
+#define PSTRG_HEALTHBAR_RANGE_START (PSTRG_RESERVED_RANGE_START + 5000)
+#define PSTRG_HEALTHBAR_RANGE_SIZE 500
+
+//[3500 - 4000]
+#define PSTRG_HEALTHBG_RANGE_START (PSTRG_RESERVED_RANGE_START + 3500)
+#define PSTRG_HEALTHBG_RANGE_SIZE 500
+
+//[4000 - 4500]
+#define PSTRG_MANABG_RANGE_START (PSTRG_RESERVED_RANGE_START + 4000)
+#define PSTRG_MANABG_RANGE_SIZE 500
 #define NETWORK_RETRY_TIMEOUT 5000
 #define NETWORK_DEFAULT_SIZE 4096
 #define NETWORK_HEADER_SIZE 2
-#define NETWORK_MAX_SIZE 24590
+#define NETWORK_CRYPTOHEADER_SIZE (NETWORK_HEADER_SIZE + 6)
+#define NETWORK_MAX_SIZE 65500
+#define NETWORK_BODY_SIZE (NETWORK_MAX_SIZE - NETWORK_CRYPTOHEADER_SIZE - 6)
 
 #define IPBAN_FLAG 128
 #define LOCALHOST 2130706433
 #define SWIMMING_OUTFIT 267
 #define GRATIS_PREMIUM 65535
-#define OUTFITS_MAX_NUMBER 26
+#define OUTFITS_MAX_NUMBER 2000
 
 #define IS_IN_KEYRANGE(key, range) (key >= PSTRG_##range##_START && ((key - PSTRG_##range##_START) < PSTRG_##range##_SIZE))
 #endif

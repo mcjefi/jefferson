@@ -69,6 +69,9 @@ Player::Player(const std::string& _name, ProtocolGame_ptr p):
 
 	pvpBlessing = pzLocked = isConnecting = addAttackSkillPoint = requestedOutfit = outfitAttributes = sentChat = false;
 	saving = true;
+	
+	// Auto Loot
+	lootEnabled = false;
 
 	is_spectating = false;
 	p_protocol = p;
@@ -108,8 +111,6 @@ Player::Player(const std::string& _name, ProtocolGame_ptr p):
     // Wonsr
 	extraLootChance = 0;
 	extraExpRate = 0;
-	autoLootStatus = true; //autoloot by naze
-	autoMoneyCollect = true; //autoloot by naze
 	extraRareLootRate = 0;
 	
 	setVocation(0);
@@ -942,10 +943,196 @@ bool Player::setStorage(const std::string& key, const std::string& value)
 			std::clog << "[Warning - Player::setStorage] Invalid addons value key: " << key
 				<< ", value: " << value << " for player: " << getName() << std::endl;
 	}
+	else if (IS_IN_KEYRANGE(numericKey, AURA_RANGE))
+	{
+		uint32_t auraId = atoi(value.c_str()) >> 16;
+		return addAura(auraId);
+	}
+	else if (IS_IN_KEYRANGE(numericKey, WING_RANGE))
+	{
+		uint32_t wingId = atoi(value.c_str()) >> 16;
+		return addWing(wingId);
+	}
+	else if (IS_IN_KEYRANGE(numericKey, SHADER_RANGE))
+	{
+		uint32_t shaderId = atoi(value.c_str()) >> 16;
+		return addShader(shaderId);
+	}	
+	else if (IS_IN_KEYRANGE(numericKey, HEALTHBAR_RANGE))
+	{
+		uint32_t healthBarId = atoi(value.c_str()) >> 16;
+		return addHealthBackground(healthBarId);
+	}
+	else if (IS_IN_KEYRANGE(numericKey, MANABG_RANGE))
+	{
+		uint32_t manaBgId = atoi(value.c_str()) >> 16;
+		return addManaBackground(manaBgId);
+	}
 	else
 		std::clog << "[Warning - Player::setStorage] Unknown reserved key: " << key << " for player: " << getName() << std::endl;
 
 	return false;
+}
+
+bool Player::canWearAura(uint32_t auraId)
+{
+	std::map<uint32_t, Aura*>::iterator it = auras.find(auraId);
+	if(it == auras.end())
+		return false;
+
+	return true;
+}
+
+bool Player::addAura(uint32_t auraId)
+{
+	Aura* aura = Auras::getInstance()->getAura(auraId);
+	if(!aura)
+		return false;
+
+	std::map<uint32_t, Aura*>::iterator it = auras.find(auraId);
+	if(it != auras.end())
+		return false;
+
+	auras[auraId] = aura;
+	return true;
+}
+
+bool Player::removeAura(uint32_t auraId)
+{
+	std::map<uint32_t, Aura*>::iterator it = auras.find(auraId);
+	if(it == auras.end())
+		return false;
+
+	auras.erase(it);
+	return true;
+}
+
+bool Player::canWearWing(uint32_t wingId)
+{
+	std::map<uint32_t, Wing*>::iterator it = wings.find(wingId);
+	if(it == wings.end())
+		return false;
+
+	return true;
+}
+
+bool Player::addWing(uint32_t wingId)
+{
+	Wing* wing = Wings::getInstance()->getWing(wingId);
+	if(!wing)
+		return false;
+
+	std::map<uint32_t, Wing*>::iterator it = wings.find(wingId);
+	if(it != wings.end())
+		return false;
+
+	wings[wingId] = wing;
+	return true;
+}
+
+bool Player::removeWing(uint32_t wingId)
+{
+	std::map<uint32_t, Wing*>::iterator it = wings.find(wingId);
+	if(it == wings.end())
+		return false;
+
+	wings.erase(it);
+	return true;
+}
+
+bool Player::canWearShader(uint32_t shaderId)
+{
+	std::map<uint32_t, Shader*>::iterator it = shaders.find(shaderId);
+	if(it == shaders.end())
+		return false;
+
+	return true;
+}
+
+bool Player::addShader(uint32_t shaderId)
+{
+	Shader* shader = Shaders::getInstance()->getShader(shaderId);
+	if(!shader)
+		return false;
+
+	std::map<uint32_t, Shader*>::iterator it = shaders.find(shaderId);
+	if(it != shaders.end())
+		return false;
+
+	shaders[shaderId] = shader;
+	return true;
+}
+
+bool Player::removeShader(uint32_t shaderId)
+{
+	std::map<uint32_t, Shader*>::iterator it = shaders.find(shaderId);
+	if(it == shaders.end())
+		return false;
+
+	shaders.erase(it);
+	return true;
+}
+
+bool Player::canWearHealthBackground(uint32_t healthIdBg)
+{
+	std::map<uint32_t, HealthBar*>::iterator it = healthBar.find(healthIdBg);
+	if(it == healthBar.end())
+		return false;
+
+	return true;
+}
+
+bool Player::addHealthBackground(uint32_t healthIdBg)
+{
+	HealthBar* health = HealthBars::getInstance()->getHealthBar(healthIdBg);
+	if(!health)
+		return false;
+	
+	std::map<uint32_t, HealthBar*>::iterator it = healthBar.find(healthIdBg);
+	if(it != healthBar.end())
+		return false;
+
+	healthBar[healthIdBg] = health;
+	return true;
+}
+
+bool Player::removeHealthBackground(uint32_t healthIdBg)
+{
+	std::map<uint32_t, HealthBar*>::iterator it = healthBar.find(healthIdBg);
+	if(it == healthBar.end())
+		return false;
+
+	healthBar.erase(it);
+	return true;
+}
+
+bool Player::canWearManaBackground(uint32_t manaIdBg)
+{
+	std::map<uint32_t, uint32_t>::iterator it = manaBgs.find(manaIdBg);
+	if(it == manaBgs.end())
+		return false;
+
+	return true;
+}
+
+bool Player::addManaBackground(uint32_t manaIdBg)
+{
+	std::map<uint32_t, uint32_t>::iterator it = manaBgs.find(manaIdBg);
+	if(it != manaBgs.end())
+		return false;
+
+	manaBgs[manaIdBg] = manaIdBg;
+	return true;
+}
+
+bool Player::removeManaBackground(uint32_t manaIdBg)
+{
+	std::map<uint32_t, uint32_t>::iterator it = manaBgs.find(manaIdBg);
+	if(it == manaBgs.end())
+		return false;
+
+	manaBgs.erase(it);
+	return true;
 }
 
 void Player::eraseStorage(const std::string& key)
@@ -1155,7 +1342,7 @@ void Player::sendCancelMessage(ReturnValue message) const
 			break;
 
 		case RET_HOUSEPROTECTED:
-			sendCancel("Essa casa está protegida, você não pode mover ou jogar items!");
+			sendCancel("Essa casa estï¿½ protegida, vocï¿½ nï¿½o pode mover ou jogar items!");
 			break;
 
 		case RET_CREATUREDOESNOTEXIST:
@@ -1860,11 +2047,6 @@ void Player::onCreatureMove(const Creature* creature, const Tile* newTile, const
 {
 	Creature::onCreatureMove(creature, newTile, newPos, oldTile, oldPos, teleport);
 
-	if (hasFollowPath && (creature == followCreature || (creature == this && followCreature))) {
-		isUpdatingPath = false;
-		Dispatcher::getInstance().addTask(createTask(std::bind(&Game::updateCreatureWalk, &g_game, getID())));
-	}
-
 	if(creature != this)
 		return;
 
@@ -1887,10 +2069,11 @@ void Player::onCreatureMove(const Creature* creature, const Tile* newTile, const
 		}
 	}
 
-	if (editHouse && !newTile->hasFlag(TILESTATE_HOUSE)) {
+	// unset editing house
+	if(editHouse && !newTile->hasFlag(TILESTATE_HOUSE))
 		editHouse = NULL;
-	}
-	
+
+ 
 	if(getZone() == ZONE_PROTECTION && newTile->ground && oldTile->ground &&
 		Item::items[newTile->ground->getID()].walkStack != Item::items[oldTile->ground->getID()].walkStack)
 		g_game.updateCreatureWalkthrough(this);
@@ -2064,6 +2247,56 @@ uint32_t Player::getNextActionTime(bool scheduler/* = true*/) const
 		return (uint32_t)std::max((int64_t)0, ((int64_t)nextAction - OTSYS_TIME()));
 
 	return (uint32_t)std::max((int64_t)SCHEDULER_MINTICKS, ((int64_t)nextAction - OTSYS_TIME()));
+}
+
+//ping
+void Player::sendPing()
+{
+	int64_t timeNow = OTSYS_TIME();
+
+	bool hasLostConnection = false;
+	if ((timeNow - lastPing) >= 5000) {
+		lastPing = timeNow;
+		if (client) {
+			client->sendPing();
+		}
+		else {
+			hasLostConnection = true;
+		}
+	}
+
+	int64_t noPongTime = timeNow - lastPong;
+	if ((hasLostConnection || noPongTime >= 7000) && attackedCreature && attackedCreature->getPlayer()) {
+		setAttackedCreature(nullptr);
+	}
+
+	if (noPongTime >= 60000 && canLogout()) {
+		if (g_creatureEvents->playerLogout(this, false)) {
+			if (client) {
+				client->logout(true, true);
+			}
+			else {
+				g_game.removeCreature(this, true);
+			}
+		}
+	}
+}
+
+bool Player::canLogout()
+{
+	if (isConnecting) {
+		return false;
+	}
+
+	if (getTile()->hasFlag(TILESTATE_NOLOGOUT)) {
+		return false;
+	}
+
+	if (getTile()->hasFlag(TILESTATE_PROTECTIONZONE)) {
+		return true;
+	}
+
+	return !isPzLocked() && !hasCondition(CONDITION_INFIGHT);
 }
 
 void Player::onThink(uint32_t interval)
@@ -4640,9 +4873,88 @@ void Player::generateReservedStorage()
 
 		std::clog << "[Warning - Player::genReservedStorageRange] Player " << getName() << " with more than 500 outfits!" << std::endl;
 		break;
+	}														 
+
+	key = PSTRG_AURA_RANGE_START + 1;
+	const AurasMap& defaultAuras = Auras::getInstance()->getAuras();
+	for (std::map<uint32_t, Aura*>::const_iterator it = auras.begin(); it != auras.end(); ++it)
+	{
+		AurasMap::const_iterator dit = defaultAuras.find(it->first);
+		if (dit == defaultAuras.end())
+			continue;
+
+		std::stringstream ssk, ssv;
+		ssk << key++; // this may not work as intended, revalidate it
+		ssv << (it->first << 16);
+		storageMap[ssk.str()] = ssv.str();
+
+		if (key <= PSTRG_AURA_RANGE_START + PSTRG_AURA_RANGE_SIZE)
+			continue;
+
+		std::cout << "[Warning - Player::genReservedStorageRange] Player " << getName() << " with more than " << PSTRG_AURA_RANGE_SIZE << " auras!" << std::endl;
+		break;
+	}
+
+	key = PSTRG_WING_RANGE_START + 1;
+	const WingsMap& defaultWings = Wings::getInstance()->getWings();
+	for (std::map<uint32_t, Wing*>::const_iterator it = wings.begin(); it != wings.end(); ++it)
+	{
+		WingsMap::const_iterator dit = defaultWings.find(it->first);
+		if (dit == defaultWings.end())
+			continue;
+
+		std::stringstream ssk, ssv;
+		ssk << key++; // this may not work as intended, revalidate it
+		ssv << (it->first << 16);
+		storageMap[ssk.str()] = ssv.str();
+
+		if (key <= PSTRG_WING_RANGE_START + PSTRG_WING_RANGE_SIZE)
+			continue;
+
+		std::cout << "[Warning - Player::genReservedStorageRange] Player " << getName() << " with more than " << PSTRG_WING_RANGE_SIZE << " wings!" << std::endl;
+		break;
+	}
+
+	key = PSTRG_SHADER_RANGE_START + 1;
+	const ShadersMap& defaultShaders = Shaders::getInstance()->getShaders();
+	for (std::map<uint32_t, Shader*>::const_iterator it = shaders.begin(); it != shaders.end(); ++it)
+	{
+		ShadersMap::const_iterator dit = defaultShaders.find(it->first);
+		if (dit == defaultShaders.end())
+			continue;
+
+		std::stringstream ssk, ssv;
+		ssk << key++; // this may not work as intended, revalidate it
+		ssv << (it->first << 16);
+		storageMap[ssk.str()] = ssv.str();
+
+		if (key <= PSTRG_SHADER_RANGE_START + PSTRG_SHADER_RANGE_SIZE)
+			continue;
+
+		std::cout << "[Warning - Player::genReservedStorageRange] Player " << getName() << " with more than " << PSTRG_SHADER_RANGE_SIZE << " shaders!" << std::endl;
+		break;
+	}
+	
+	key = PSTRG_HEALTHBAR_RANGE_START + 1;
+	const HealthBarsMap& defaultHealthBars = HealthBars::getInstance()->getHealthBars();
+	for (std::map<uint32_t, HealthBar*>::const_iterator it = healthBar.begin(); it != healthBar.end(); ++it)
+	{
+		HealthBarsMap::const_iterator dit = defaultHealthBars.find(it->first);
+		if (dit == defaultHealthBars.end())
+			continue;
+
+		std::stringstream ssk, ssv;
+		ssk << key++; // this may not work as intended, revalidate it
+		ssv << (it->first << 16);
+		storageMap[ssk.str()] = ssv.str();
+
+		if (key <= PSTRG_HEALTHBAR_RANGE_START + PSTRG_HEALTHBAR_RANGE_SIZE)
+			continue;
+
+		std::cout << "[Warning - Player::genReservedStorageRange] Player " << getName() << " with more than " << PSTRG_HEALTHBAR_RANGE_SIZE << " healthbars!" << std::endl;
+		break;
 	}
 }
-
 void Player::setSex(uint16_t newSex)
 {
 	sex = newSex;
@@ -5772,6 +6084,27 @@ void Player::sendCritical() const
 		g_game.addAnimatedText(getPosition(), COLOR_DARKRED, "CRITICAL!");
 }
 
+// Auto Loot
+void Player::addAutoLootItem(const std::string& name)
+{
+    loot.push_front(name);
+}
+
+void Player::removeAutoLootItem(const std::string& name)
+{
+    loot.remove(name);
+}
+
+void Player::setEnabledAutoLoot(bool option)
+{
+	lootEnabled = option;
+}
+
+bool Player::getEnabledAutoLoot()
+{
+	return lootEnabled;
+}
+
 bool Player::addOfflineTrainingTries(skills_t skill, int32_t tries)
 {
 	if(tries <= 0 || skill == SKILL__LEVEL || skill == SKILL__EXPERIENCE)
@@ -5889,69 +6222,5 @@ bool Player::addOfflineTrainingTries(skills_t skill, int32_t tries)
 
 	ss << std::fixed << std::setprecision(2) << "Your " << ucwords(getSkillName(skill)) << " skill changed from level " << oldSkillValue << " (with " << oldPercentToNextLevel << "% progress towards level " << (oldSkillValue + 1) << ") to level " << newSkillValue << " (with " << newPercentToNextLevel << "% progress towards level " << (newSkillValue + 1) << ")";
 	sendTextMessage(MSG_EVENT_ADVANCE, ss.str().c_str());
-	return true;
-}
-
-void Player::addAutoLoot(uint16_t id) {
-	if(checkAutoLoot(id)) {
-		return;
-	}
-	AutoLoot.push_back(id);
-}
-
-void Player::removeAutoLoot(uint16_t id) {
-	if(!checkAutoLoot(id))
-		return;
-	
-	for(std::list<uint16_t>::iterator it = AutoLoot.begin(); it != AutoLoot.end(); ++it) {
-		if((*it) == id) {
-		AutoLoot.erase(it); 
-			break;
-		}
-	}	
-}
-
-bool Player::limitAutoLoot() {
-	std::list<uint16_t> list = getAutoLoot();
-	if((uint16_t)list.size() >= g_config.getNumber(ConfigManager::AUTOLOOT_MAXITEM)) {
-		return true;
-	}
-	return false;
-}
-
-bool Player::checkAutoLoot(uint16_t id) {
-	if(Item::items[id].isContainer()) {
-		return true;
-	}
-	std::string msg = g_config.getString(ConfigManager::AUTOLOOT_BLOCKIDS);
-	StringVec strVector = explodeString(msg, ";");
-	for(StringVec::iterator it = strVector.begin(); it != strVector.end(); ++it) {
-		if(atoi((*it).c_str()) == id) {
-			return true;
-		}
-	}
-	for(std::list<uint16_t>::iterator it = AutoLoot.begin(); it != AutoLoot.end(); ++it) {
-		if((*it) == id) {
-			return true;
-		}
-	}
-	return false;
-}
-
-bool Player::isMoneyAutoLoot(Item* item, uint32_t& count) {
-	bool isMoney = false;
-	std::string msg = g_config.getString(ConfigManager::AUTOLOOT_MONEYIDS);
-	StringVec strVector = explodeString(msg, ";");
-	for(StringVec::iterator it = strVector.begin(); it != strVector.end(); ++it) {
-		if(item->getID() == atoi((*it).c_str())) {
-			isMoney = true;
-			break;
-		}
-	}
-	if(!isMoney) {
-		return false;
-    }
-  
-	count += item->getWorth();
 	return true;
 }

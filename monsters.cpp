@@ -163,19 +163,7 @@ bool MonsterType::createChildLoot(Container* parent, const LootBlock& lootBlock,
 					delete container;
 			}
 			else {
-				bool LootCatch = false;
-				if(player && (player->statusAutoLoot() == "On")) {
-					LootCatch = player->checkAutoLoot(tmpItem->getID());
-				}
-				if(LootCatch) {
-					if(player->isMoneyAutoLoot(tmpItem, money)) {
-						continue;
-					}
-					g_game.internalPlayerAddItem(NULL, player, tmpItem);
-					str << " " << tmpItem->getNameDescription() << ",";
-					continue;
-				}
-					parent->__internalAddThing(tmpItem);
+				parent->__internalAddThing(tmpItem);
 			}
 		}
 	}
@@ -215,20 +203,6 @@ void MonsterType::dropLoot(Container* corpse)
 				}
 			}
 			else {
-				bool LootCatch = false;
-				if(owner) {
-					if(owner->statusAutoLoot() == "On") {
-						LootCatch = owner->checkAutoLoot(tmpItem->getID());
-						if(LootCatch) {
-							if(owner->isMoneyAutoLoot(tmpItem, money)) {
-								continue;
-							}
-							g_game.internalPlayerAddItem(NULL, owner, tmpItem);
-							str << " " << tmpItem->getNameDescription() << ",";
-							continue;
-						}
-					}
-				}
 				corpse->__internalAddThing(tmpItem);
 			}
 		}
@@ -242,17 +216,6 @@ void MonsterType::dropLoot(Container* corpse)
 	if(!owner)
 		return;
 
-	if(money != 0) {
-		if(owner->statusAutoMoneyCollect() == "Bank"){
-			owner->balance += money;
-		} else {
-			g_game.addMoney(owner, money);
-		}
-		str << " " << money << "x coins.";
-	} else {
-		str << " nothing coins.";
-	}
-
 	LootMessage_t message = lootMessage;
 	if(message == LOOTMSG_IGNORE)
 		message = (LootMessage_t)g_config.getNumber(ConfigManager::LOOT_MESSAGE);
@@ -262,20 +225,42 @@ void MonsterType::dropLoot(Container* corpse)
 
 	std::stringstream ss;
 	ss << "Loot of " << nameDescription << ": " << corpse->getContentDescription() << ".";
-	if(owner->statusAutoLoot()  == "On") {
-		ss << "\nAutoLoot Colleted:" << str.str();
-	}
-	if(owner->getParty() && message > LOOTMSG_PLAYER)
-		owner->getParty()->broadcastMessage((MessageClasses)g_config.getNumber(ConfigManager::LOOT_MESSAGE_TYPE), ss.str());
-	else if (message == LOOTMSG_PLAYER || message == LOOTMSG_BOTH)
+
+	// Auto Loot
+	std::list<Item*> waiting_list;
+	for(ContainerIterator it = corpse->begin(); it != corpse->end(); it++)
 	{
-		std::string value = "-1";
-		owner->getStorage("lootch", value);
-		if (value == "-1")
-			owner->sendTextMessage((MessageClasses)g_config.getNumber(ConfigManager::LOOT_MESSAGE_TYPE), ss.str());
-		else
-			owner->sendChannelMessage("", ss.str(), MSG_CHANNEL_MANAGEMENT, CHANNEL_LOOT);
+		waiting_list.push_back((*it));
 	}
+
+	for(std::list<Item*>::iterator it = waiting_list.begin(); it != waiting_list.end(); it++)
+	{
+		if (!(*it) || !(*it)->getItem())
+			return;
+
+		for(std::list<std::string>::iterator itt = owner->loot.begin(); itt != owner->loot.end(); itt++) {
+			if ((*it)->getName() == (*itt)) {
+				if (!owner->getEnabledAutoLoot()) {
+					return;
+				}
+						
+				  ReturnValue ret = g_game.internalMoveItem(NULL, corpse->getContainer(), owner, INDEX_WHEREEVER, (*it), (*it)->getItemCount(), NULL, FLAG_NOLIMIT);
+				  if (ret != RET_NOERROR) {
+					  return;
+				  }
+
+				  if (ret == RET_NOERROR) {
+					std::stringstream msg;
+					msg << "Coletado: " << (*it)->getName() << " (" << (*it)->getItemCount() << "x)";
+					owner->sendTextMessage(MSG_STATUS_CONSOLE_BLUE, msg.str());
+
+					ss << msg.str() << std::endl;
+				 }
+			}
+		}
+	}
+
+	owner->sendChannelMessage("", ss.str(), MSG_CHANNEL_MANAGEMENT, CHANNEL_LOOT);
 }
 
 bool Monsters::loadFromXml(bool reloading /*= false*/)

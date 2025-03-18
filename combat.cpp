@@ -405,7 +405,6 @@ ReturnValue Combat::canDoCombat(const Creature* attacker, const Creature* target
 	{
 		if(player && player->getSecureMode() == SECUREMODE_ON) // optional pvp
 		    return RET_TURNSECUREMODETOATTACKUNMARKEDPLAYERS;
-		
 		if(!targetPlayer->isAttackable())
 			return RET_YOUMAYNOTATTACKTHISPLAYER;
 		
@@ -426,15 +425,12 @@ ReturnValue Combat::canDoCombat(const Creature* attacker, const Creature* target
 	}
 	else if(target->getMonster())
 	{
-        	if(attacker->getMonster() && !target->getPlayerMaster() && !attacker->getPlayerMaster())
-            		return RET_YOUMAYNOTATTACKTHISCREATURE;
-           
-        	if(!target->isAttackable())
-            		return RET_YOUMAYNOTATTACKTHISCREATURE;
-				
+			if(attacker->getMonster() && !target->getPlayerMaster() && !attacker->getPlayerMaster())
+					return RET_YOUMAYNOTATTACKTHISCREATURE;
+			if(!target->isAttackable())
+					return RET_YOUMAYNOTATTACKTHISCREATURE;
 			if (attacker->getPlayer() && const_cast<Monster*>(target->getMonster())->isPlayerSagaBlock(attacker) > 0) // Saga System
 				return RET_SAGAERROR;
-
 		const Player* attackerPlayer = NULL;
 		if((attackerPlayer = attacker->getPlayer()) || (attackerPlayer = attacker->getPlayerMaster()))
 		{

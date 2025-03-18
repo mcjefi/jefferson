@@ -816,29 +816,17 @@ bool IOLoginData::loadPlayer(Player* player, const std::string& name, bool preLo
 		
 	}
 	
-	//load autoloot
+	// Auto Loot
 	query.str("");
-    query << "SELECT `autoloot_list` FROM `player_autoloot` WHERE `player_id` = " << player->getGUID();
-    if ((result = db->storeQuery(query.str()))) {
-        uint64_t lootListSize;
-        const char* autoLootList = result->getDataStream("autoloot_list", lootListSize);
-        // PropStream &propStream;
-		PropStream propStream;
-        propStream.init(autoLootList, lootListSize);
+	query << "SELECT `name`, `on` FROM `player_autoloot` WHERE `player_id` = " << player->getGUID();
+	if((result = db->storeQuery(query.str())))
+	{
+	do {
+		player->loot.push_front(result->getDataString("name"));
+		player->setEnabledAutoLoot((int)result->getDataInt("on"));
+	}
 
-        uint16_t value;
-        uint16_t item = propStream.getType<uint16_t>(value);
-        while (item) {
-            player->addAutoLoot(value);
-            item = propStream.getType<uint16_t>(value);
-        }
-    }
-	player->updateStatusAutoLoot(true);
-	std::string msg = g_config.getString(ConfigManager::AUTOLOOT_MONEYIDS);
-	StringVec strVector = explodeString(msg, ";");
-	for(StringVec::iterator it = strVector.begin(); it != strVector.end(); ++it) {
-		uint16_t id = atoi((*it).c_str());
-		player->addAutoLoot(id);
+	while(result->next());
 	}
 
 	query.str("");
@@ -1154,30 +1142,22 @@ bool IOLoginData::savePlayer(Player* player, bool preSave/* = true*/, bool shall
 			return false;
 	}
 	
-	//save autoloot
+	// Auto Loot
 	query.str("");
-	query << "DELETE FROM `player_autoloot` WHERE `player_id` = " << player->getGUID();
-	if(!db->query(query.str()))
+	query << "DELETE FROM `player_autoloot` WHERE player_id = " << player->getGUID();
+	if(!db->executeQuery(query.str()))
 		return false;
+		
+	stmt.setQuery("INSERT INTO `player_autoloot` (`id`, `name`, `player_id`, `on`) VALUES ");
+	for(std::list<std::string>::const_iterator it = player->loot.begin(); it != player->loot.end(); it++)
+	{
+		query << db->escapeString((*it)).c_str() << "," << player->getGUID() << "," << player->lootEnabled;
+		if(!stmt.addRow(query))
+			return false;
+	}
 
-	PropWriteStream PWS_AutoLoot;
-	std::list<uint16_t> autoLootList = player->getAutoLoot();
-    for (std::list<uint16_t>::iterator it = autoLootList.begin(); it != autoLootList.end(); ++it) {
-		PWS_AutoLoot.addShort(*it);
-    }
-
-	uint32_t PWS_Size = 0;
-	const char* autoLoot = PWS_AutoLoot.getStream(PWS_Size);
-
-	query.str("");
-	stmt.setQuery("INSERT INTO `player_autoloot` (`player_id`, `autoloot_list`) VALUES ");
-    query << player->getGUID() << ',' << db->escapeBlob(autoLoot, PWS_Size);
-    if (!stmt.addRow(query)) {
-        return false;
-    }
-    if (!stmt.execute()) {
-        return false;
-    }
+	if(!stmt.execute())
+		return false;
 	
 	query.str("");
 	//save vip list

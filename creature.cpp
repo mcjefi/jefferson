@@ -126,10 +126,8 @@ bool Creature::canSee(const Position& myPos, const Position& pos, uint32_t viewR
 	}
 
 	int32_t offsetz = myPos.z - pos.z;
-	// return (((uint32_t)pos.x >= myPos.x - viewRangeX + offsetz) && ((uint32_t)pos.x <= myPos.x + viewRangeX + offsetz) &&
-		// ((uint32_t)pos.y >= myPos.y - viewRangeY + offsetz) && ((uint32_t)pos.y <= myPos.y + viewRangeY + offsetz));
-	return (pos.x >= myPos.x - Map::maxViewportX + offsetz) && (pos.x <= myPos.x + Map::maxViewportX + offsetz)
-       && (pos.y >= myPos.y - Map::maxViewportY + offsetz) && (pos.y <= myPos.y + Map::maxViewportY + offsetz);
+	return (((uint32_t)pos.x >= myPos.x - viewRangeX + offsetz) && ((uint32_t)pos.x <= myPos.x + viewRangeX + offsetz) &&
+		((uint32_t)pos.y >= myPos.y - viewRangeY + offsetz) && ((uint32_t)pos.y <= myPos.y + viewRangeY + offsetz));
 }
 
 bool Creature::canSee(const Position& pos) const
@@ -353,7 +351,7 @@ void Creature::onWalk(Direction& dir)
 	else if(r <= (tmp * 4))
 		dir = EAST;
 
-	g_game.internalCreatureSay(this, MSG_SPEAK_MONSTER_SAY, "Hicks!", isGhost());
+	g_game.addMagicEffect(getPosition(), MAGIC_EFFECT_DRUNK, isGhost());
 }
 
 bool Creature::getNextStep(Direction& dir, uint32_t&)

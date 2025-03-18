@@ -765,7 +765,41 @@ ServiceManager* services)
 	#endif
 	if(!Outfits::getInstance()->loadFromXml())
 		startupErrorMessage("Unable to load outfits!");
-
+	
+	//
+	std::clog << ">> Loading auras" << std::endl;
+	#if defined(WINDOWS) && !defined(_CONSOLE)
+	SendMessage(GUI::getInstance()->m_statusBar, WM_SETTEXT, 0, (LPARAM)">> Loading auras");
+	#endif
+	
+	if (!Auras::getInstance()->loadFromXml())
+			startupErrorMessage("Unable to load auras.");
+		
+	std::clog << ">> Loading wings" << std::endl;
+	#if defined(WINDOWS) && !defined(_CONSOLE)
+	SendMessage(GUI::getInstance()->m_statusBar, WM_SETTEXT, 0, (LPARAM)">> Loading wings");
+	#endif
+	
+	if (!Wings::getInstance()->loadFromXml())
+			startupErrorMessage("Unable to load wings.");
+		
+	std::clog << ">> Loading shaders" << std::endl;
+	#if defined(WINDOWS) && !defined(_CONSOLE)
+	SendMessage(GUI::getInstance()->m_statusBar, WM_SETTEXT, 0, (LPARAM)">> Loading shaders");
+	#endif
+	
+	if (!Shaders::getInstance()->loadFromXml())
+			startupErrorMessage("Unable to load shaders.");
+		
+	std::clog << ">> Loading healthbars" << std::endl;
+	#if defined(WINDOWS) && !defined(_CONSOLE)
+	SendMessage(GUI::getInstance()->m_statusBar, WM_SETTEXT, 0, (LPARAM)">> Loading healthbars");
+	#endif
+	
+	if (!HealthBars::getInstance()->loadFromXml())
+			startupErrorMessage("Unable to load healthbars.");
+	//
+	
 	std::clog << ">> Loading quests" << std::endl;
 	#if defined(WINDOWS) && !defined(_CONSOLE)
 	SendMessage(GUI::getInstance()->m_statusBar, WM_SETTEXT, 0, (LPARAM)">> Loading quests");

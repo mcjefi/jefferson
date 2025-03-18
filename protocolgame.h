@@ -212,6 +212,7 @@ class ProtocolGame : public Protocol
 		void sendCreatureHealth(const Creature* creature);
 		void sendSkills();
 		void sendPing();
+		void sendPingBack();
 		void sendCreatureTurn(const Creature* creature, int16_t stackpos);
 		void sendCreatureSay(const Creature* creature, MessageClasses type, const std::string& text, Position* pos, uint32_t statementId);
 		void sendCreatureChannelSay(const Creature* creature, MessageClasses type, const std::string& text, uint16_t channelId, uint32_t statementId);
@@ -341,11 +342,35 @@ class ProtocolGame : public Protocol
 
 		void parseExtendedOpcode(NetworkMessage& msg);
 		void sendExtendedOpcode(uint8_t opcode, const std::string& buffer);
+		
+		//ping
+		void parseNewPing(NetworkMessage& msg);
+		void sendNewPing(uint32_t pingId);
+		void sendFeatures();
 
 		#define addGameTask(f, ...) addGameTaskInternal(0, boost::bind(f, &g_game, __VA_ARGS__))
 		#define addGameTaskTimed(delay, f, ...) addGameTaskInternal(delay, boost::bind(f, &g_game, __VA_ARGS__))
 		template<class FunctionType>
 		void addGameTaskInternal(uint32_t delay, const FunctionType&);
+
+		void parseChangeAwareRange(NetworkMessage& msg);
+		void updateAwareRange(int width, int height);
+		void sendAwareRange();
+		void sendMapDescription(const Position& pos, OutputMessage_ptr msg = NULL);
+		void sendFloorDescription(const Position& pos, int floor);
+
+		struct {
+			int width = 17;
+			int height = 13;
+
+			int left() const { return width / 2; }
+			int right() const { return 1 + width / 2; }
+			int top() const { return height / 2; }
+			int bottom() const { return 1 + height / 2; }
+			int horizontal() const { return width + 1; }
+			int vertical() const { return height + 1; }
+
+		} awareRange;
 
 		friend class Player;
 		friend class Spectators;
@@ -355,5 +380,7 @@ class ProtocolGame : public Protocol
 		time_t m_lastSwitch;
 		uint32_t eventConnect, m_maxSizeCount, m_packetCount, m_packetTime;
 		bool m_debugAssertSent, acceptPackets, m_spectator, is_spectating;
+		
+		uint16_t otclientV8 = 0;
 };
 #endif

@@ -494,7 +494,7 @@ Spell::Spell()
 	learnable = false;
 	desc = "";
 	cooldownID = "33000";
-	cooldownValue = 1000;
+	cooldownValue = 500;
 
 	for (int32_t i = SKILL_FIRST; i <= SKILL_LAST; ++i)
 		skills[i] = 10;
@@ -727,15 +727,17 @@ bool Spell::checkSpell(Player* player) const
 
 	}
 	
-		std::string seleadCD;
+	uint64_t time = static_cast<uint64_t>(OTSYS_TIME());
+	
+	std::string seleadCD;
     if (player->getStorage("32999", seleadCD) && !(exhaustedGroup == "heal" || exhaustedGroup == "healing")) {
 		uint64_t seleadTime;
 		std::stringstream ctime;
 	    ctime << seleadCD;
 		ctime >> seleadTime;
-		if (seleadTime > OTSYS_TIME()) {
-            char buffer[65];
-            sprintf(buffer, "You are Sealed, the seal will come out in %.2f second(s).", (float)(seleadTime-OTSYS_TIME())/1000);
+		if (seleadTime > time) {
+            char buffer[100];
+            sprintf(buffer, "You are Sealed, the seal will come out in %.2f second(s).", (float)(seleadTime-time)/1000);
             player->sendCancel(buffer);
             return false;
 		}
@@ -747,9 +749,9 @@ bool Spell::checkSpell(Player* player) const
 		std::stringstream cd;
 	    cd << stringCD;
 		cd >> CD;
-		if (CD > OTSYS_TIME()) {
-            char buffer[50];
-            sprintf(buffer, "Wait %.2f second(s) to use the %s again.", (float)(CD-OTSYS_TIME())/1000, getName().c_str());
+		if (CD > time) {
+            char buffer[100];
+            sprintf(buffer, "Wait %.2f second(s) to use the %s again.", (float)(CD-time)/1000, getName().c_str());
             player->sendCancel(buffer);
             return false;
 		}

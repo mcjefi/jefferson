@@ -166,10 +166,10 @@ class Map
 		Map();
 		virtual ~Map() {}
 
-		static const int32_t maxViewportX = 17; //min value: maxClientViewportX + 1
-		static const int32_t maxViewportY = 10; //min value: maxClientViewportY + 1
-		static const int32_t maxClientViewportX = 16;
-		static const int32_t maxClientViewportY = 10;
+		static constexpr int32_t maxClientViewportX = 15; // +1 cuz otc is retarded
+		static constexpr int32_t maxClientViewportY = 10;
+		static constexpr int32_t maxViewportX = maxClientViewportX + 2;
+		static constexpr int32_t maxViewportY = maxClientViewportY + 2;
 
 		/**
 		* Load a map.

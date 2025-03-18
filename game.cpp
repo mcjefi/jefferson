@@ -1567,7 +1567,10 @@ bool Game::playerMoveItem(uint32_t playerId, const Position& fromPos,
 	{
 		player->sendCancelMessage(ret);
 		return false;
+		 
+										 
 	}
+
 
 	if (Condition * privCondition = Condition::createCondition(CONDITIONID_DEFAULT, CONDITION_EXHAUST, g_config.getNumber(ConfigManager::CUSTOM_ACTIONS_DELAY_INTERVAL), 0, false, 22))
 		player->addCondition(privCondition);
@@ -2556,15 +2559,41 @@ bool Game::playerCloseNpcChannel(uint32_t playerId)
 	return true;
 }
 
-bool Game::playerReceivePing(uint32_t playerId)
+
+//ping
+bool Game::playerReceivePing(const uint32_t& playerId)
 {
 	Player* player = getPlayerByID(playerId);
-	if(!player || player->isRemoved())
+	if (!player || player->isRemoved())
 		return false;
 
 	player->receivePing();
 	return true;
 }
+
+void Game::playerReceivePingBack(uint32_t playerId)
+{
+	Player* player = getPlayerByID(playerId);
+	if (!player) {
+		return;
+	}
+
+	player->sendPingBack();
+}
+
+void Game::playerReceiveNewPing(uint32_t playerId, uint16_t ping, uint16_t fps)
+{
+	Player* player = getPlayerByID(playerId);
+	if (!player) {
+		return;
+	}
+
+	player->receivePing();
+	player->setLocalPing(ping);
+	player->setFPS(fps);
+}
+//end ping
+
 
 bool Game::playerAutoWalk(uint32_t playerId, std::list<Direction>& listDir)
 {

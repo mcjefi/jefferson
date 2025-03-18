@@ -411,6 +411,16 @@ class LuaInterface
 		static int32_t luaDoPlayerAddItemEx(lua_State* L);
 		static int32_t luaDoTileAddItemEx(lua_State* L);
 		static int32_t luaDoAddContainerItemEx(lua_State* L);
+		static int32_t luaDoPlayerAddHealthBackground(lua_State* L);
+		static int32_t luaDoSetHealthBackgroundOutfit(lua_State* L);
+		static int32_t luaDoPlayerRemoveHealthBackground(lua_State* L);
+		static int32_t luaCanPlayerWearHealthBackground(lua_State* L);
+		static int32_t luaCanPlayerWearHealthBackgroundType(lua_State* L);
+		static int32_t luaDoPlayerAddManaBackground(lua_State* L);
+		static int32_t luaDoSetManaBackgroundOutfit(lua_State* L);
+		static int32_t luaDoPlayerRemoveManaBackground(lua_State* L);
+		static int32_t luaCanPlayerWearManaBackground(lua_State* L);
+		static int32_t luaCanPlayerWearManaBackgroundType(lua_State* L);																				
 		static int32_t luaDoRelocate(lua_State* L);
 		static int32_t luaDoCleanTile(lua_State* L);
 		static int32_t luaDoPlayerSendTextMessage(lua_State* L);
@@ -432,6 +442,10 @@ class LuaInterface
 		static int32_t luaDoPlayerSetGuildLevel(lua_State* L);
 		static int32_t luaDoPlayerSetGuildNick(lua_State* L);
 		static int32_t luaDoPlayerSetSex(lua_State* L);
+		
+		//ping
+		static int32_t luaPlayerGetClient(lua_State* L);
+		
 		static int32_t luaDoPlayerSetIdleTime(lua_State* L);
 		static int32_t luaGetPlayerIdleTime(lua_State* L);
 		static int32_t luaDoCreatureSetLookDir(lua_State* L);
@@ -590,6 +604,7 @@ class LuaInterface
 		static int32_t luaDoPlayerFollowCreature(lua_State* L);
 		static int32_t luaGetPlayerParty(lua_State* L);
 		static int32_t luaDoPlayerJoinParty(lua_State* L);
+		static int32_t luaDoPlayerInviteParty(lua_State* L);
 		static int32_t luaDoPlayerLeaveParty(lua_State* L);
 		static int32_t luaGetPartyMembers(lua_State* L);
 		static int32_t luaGetCreatureStorageList(lua_State* L);
@@ -727,6 +742,24 @@ class LuaInterface
 		static int32_t luaDoPlayerSetWalkthrough(lua_State* L);
 		static int32_t luaIsPlayerUsingOtclient(lua_State* L);
 		static int32_t luaDoSendPlayerExtendedOpcode(lua_State* L);
+		static int32_t luaDoLoadShaderByName(lua_State* L); // 
+		
+		//  Auto Loot
+		static int32_t luaDoPlayerAddAutoLootItem(lua_State* L);
+		static int32_t luaDoPlayerRemoveAutoLootItem(lua_State* L);
+		static int32_t luaDoPlayerGetAutoLootList(lua_State* L);
+
+		static int32_t luaDoPlayerEnabledAutoLoot(lua_State* L);
+		static int32_t luaDoPlayerGetAutoLootEnabled(lua_State* L);
+		
+		// 
+			static int32_t luaDoPlayerAddAura(lua_State* L);
+			static int32_t luaDoPlayerAddWings(lua_State* L);
+			static int32_t luaDoPlayerAddShaderOutfit(lua_State* L);
+		//
+		
+		static int32_t luaDoCreatureChangeHealth(lua_State* L);
+		static int32_t luaDoCreatureChangeMana(lua_State* L);
 
 		static int32_t luaL_errors(lua_State* L);
 		static int32_t luaL_loadmodlib(lua_State* L);

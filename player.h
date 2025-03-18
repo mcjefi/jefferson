@@ -20,6 +20,7 @@
 #include "otsystem.h"
 #include "enums.h"
 
+#include "protocolgame.h"
 #include "creature.h"
 #include "cylinder.h"
 
@@ -35,6 +36,10 @@
 #include "party.h"
 #include "npc.h"
 #include "localization.h"
+#include "auras.h"
+#include "wings.h"
+#include "shaders.h"
+#include "healthbars.h"
 
 class House;
 class Weapon;
@@ -561,6 +566,25 @@ class Player : public Creature, public Cylinder
 
 		bool canWearOutfit(uint32_t outfitId, uint32_t addons);
 
+		bool addAura(uint32_t auraId);
+		bool removeAura(uint32_t auraId);
+		bool canWearAura(uint32_t auraId);
+
+		bool addWing(uint32_t wingId);
+		bool removeWing(uint32_t wingId);
+		bool canWearWing(uint32_t wingId);
+
+		bool addShader(uint32_t shaderId);
+		bool removeShader(uint32_t shaderId);
+		bool canWearShader(uint32_t shaderId);
+		bool addHealthBackground(uint32_t healthBgId);
+		bool removeHealthBackground(uint32_t healthBgId);
+		bool canWearHealthBackground(uint32_t healthBgId);
+
+		bool addManaBackground(uint32_t manaBgId);
+		bool removeManaBackground(uint32_t manaBgId);
+		bool canWearManaBackground(uint32_t manaBgId);
+		
 		//tile
 		//send methods
 		void sendAddTileItem(const Tile* tile, const Position& pos, const Item* item)
@@ -741,10 +765,45 @@ class Player : public Creature, public Cylinder
 			{if(client) client->sendRuleViolationCancel(name);}
 
 		void sendCritical() const;
+		
+		// Auto Loot
+		void addAutoLootItem(const std::string& name);
+		void removeAutoLootItem(const std::string& name);
+
+		void setEnabledAutoLoot(bool option);
+		bool getEnabledAutoLoot();
+
+
 		void sendPlayerIcons(Player* player);
 		void sendStats();
 
+		//ping otcv8
+		void setFPS(uint16_t value)
+		{
+			fps = value;
+		}
+		uint16_t getFPS() const
+		{
+			return fps;
+		}
 		void receivePing() {lastPong = OTSYS_TIME();}
+		void sendPing();
+		void sendPingBack() const {
+			if (client) {
+				protocolGame->sendPingBack();
+			}
+		}
+		void setLocalPing(uint16_t value)
+		{
+			localPing = value;
+		}
+		uint16_t getLocalPing() const
+		{
+			return localPing;
+		}
+
+		bool canLogout();
+		
 		virtual void onThink(uint32_t interval);
 		uint32_t getAttackSpeed() const;
 
@@ -773,31 +832,6 @@ class Player : public Creature, public Cylinder
 		void learnInstantSpell(const std::string& name);
 		void unlearnInstantSpell(const std::string& name);
 		bool hasLearnedInstantSpell(const std::string& name) const;
-		
-		//Autoloot by: Naze
-		std::list<uint16_t> getAutoLoot() {
-			return AutoLoot;
-		}
-		void clearAutoLoot() {
-			AutoLoot.clear();
-		}
-		void addAutoLoot(uint16_t id);
-		void removeAutoLoot(uint16_t id);
-		bool limitAutoLoot();
-		bool checkAutoLoot(uint16_t id);
-		bool isMoneyAutoLoot(Item* item, uint32_t& count);
-		std::string statusAutoLoot() {
-			return (autoLootStatus ? "On" : "Off");
-		}
-		void updateStatusAutoLoot(bool status){
-			autoLootStatus = status;
-		}
-		std::string statusAutoMoneyCollect() {
-			return (autoMoneyCollect ? "Bank" : "Bag");
-		}
-		void updateMoneyCollect(bool status) {
-			autoMoneyCollect = status;
-		}
 
 		VIPSet VIPList;
 		ContainerVector containerVec;
@@ -924,6 +958,8 @@ class Player : public Creature, public Cylinder
 
 		int16_t blessings;
 		uint16_t maxWriteLen;
+		uint16_t localPing = 0;
+		uint16_t fps = 0;
 		uint16_t sex;
 		uint16_t mailAttempts;
 		uint16_t lastStatsTrainingTime;
@@ -1012,6 +1048,7 @@ class Player : public Creature, public Cylinder
 		House* editHouse;
 		Npc* shopOwner;
 		Item* weapon;
+		ProtocolGame* protocolGame;
 
 		std::vector<uint32_t> forceWalkthrough;
 
@@ -1020,8 +1057,19 @@ class Player : public Creature, public Cylinder
 		ShopInfoList shopOffer;
 		PartyList invitePartyList;
 		OutfitMap outfits;
+		std::map<uint32_t, Wing*> wings;
+		std::map<uint32_t, Aura*> auras;
+		std::map<uint32_t, Shader*> shaders;
+		std::map<uint32_t, HealthBar*> healthBar;
+		std::map<uint32_t, uint32_t> healthBgs; // not in use (???)
+		std::map<uint32_t, uint32_t> manaBgs;	
 		LearnedInstantSpellList learnedInstantSpellList;
 		WarMap warMap;
+		
+		public:
+		// Auto Loot
+			std::list<std::string> loot;
+			bool lootEnabled;
 
 		friend class Game;
 		friend class LuaInterface;
