@@ -166,7 +166,7 @@ class FrozenPathingConditionCall
 		Position targetPos;
 };
 
-class Creature : virtual public Thing
+class Creature : public AutoId, virtual public Thing
 {
 	protected:
 		Creature();
@@ -194,6 +194,7 @@ class Creature : virtual public Thing
 		void setRemoved() {removed = true;}
 		virtual bool isRemoved() const {return removed;}
 
+		virtual uint32_t rangeId() = 0;
 		virtual void removeList() = 0;
 		virtual void addList() = 0;
 
@@ -224,8 +225,8 @@ class Creature : virtual public Thing
 
 		int32_t getWalkDelay(Direction dir) const;
 		int32_t getWalkDelay() const;
-		int32_t getStepDuration(Direction dir) const;
-		int32_t getStepDuration() const;
+		int64_t getStepDuration(Direction dir) const;
+		int64_t getStepDuration() const;
 
 		int64_t getEventStepTicks(bool onlyDelay = false) const;
 		int64_t getTimeSinceLastMove() const;
@@ -257,19 +258,13 @@ class Creature : virtual public Thing
 		void setCurrentOutfit(Outfit_t outfit) {currentOutfit = outfit;}
 		const Outfit_t getDefaultOutfit() const {return defaultOutfit;}
 
-		bool isInvisible() const {return hasCondition(CONDITION_INVISIBLE, -1, false);}
+		bool isInvisible(bool checkPlayer = false) const {
+			return (!checkPlayer || getPlayer()) && hasCondition(CONDITION_INVISIBLE, -1, false);
+		}
+   
+   
 		virtual bool isGhost() const {return false;}
 		virtual bool isWalkable() const {return false;}
-		
-		// Wonsr
-		
-		bool isBattleLock() const;
-		bool isInvulnerable() const;
-		bool isImmuneWeaponDamage() const;
-        virtual bool isStorageEqualValue(const uint32_t key, uint16_t value) const;  // Saga System
-		void setImmuneWeaponDamageTime(int32_t value) {immuneweapon = OTSYS_TIME() + value *1000;}
-		void setBattleLockTime(int32_t value) {battleLock = OTSYS_TIME() + value *1000;}
-        void setInvulnerableTime(int32_t value) {invulnerable = OTSYS_TIME() + value *1000;}
 
 		ZoneType_t getZone() const {return getTile()->getZone();}
 
@@ -320,11 +315,11 @@ class Creature : virtual public Thing
 		bool addCondition(Condition* condition);
 		bool addCombatCondition(Condition* condition);
 		void removeCondition(ConditionType_t type);
-		void removeCondition(ConditionType_t type, ConditionId_t id);
+		void removeCondition(ConditionType_t type, ConditionId_t conditionId);
 		void removeCondition(Condition* condition);
 		void removeCondition(const Creature* attacker, ConditionType_t type);
 		void removeConditions(ConditionEnd_t reason, bool onlyPersistent = true);
-		Condition* getCondition(ConditionType_t type, ConditionId_t id, uint32_t subId = 0) const;
+		Condition* getCondition(ConditionType_t type, ConditionId_t conditionId, uint32_t subId = 0) const;
 		void executeConditions(uint32_t interval);
 		bool hasCondition(ConditionType_t type, int32_t subId = 0, bool checkTime = true) const;
 		virtual bool isImmune(ConditionType_t type) const;
@@ -340,7 +335,7 @@ class Creature : virtual public Thing
 		void changeMaxHealth(uint32_t healthChange) {healthMax = healthChange;}
 		virtual void changeMana(int32_t manaChange);
 		void changeMaxMana(uint32_t manaChange) {manaMax = manaChange;}
-  
+
 		virtual bool getStorage(const std::string& key, std::string& value) const;
 		virtual bool setStorage(const std::string& key, const std::string& value);
 		virtual void eraseStorage(const std::string& key) {storageMap.erase(key);}
@@ -364,8 +359,8 @@ class Creature : virtual public Thing
 		//combat event functions
 		virtual void onAddCondition(ConditionType_t type, bool hadCondition);
 		virtual void onAddCombatCondition(ConditionType_t, bool) {}
-		virtual void onEndCondition(ConditionType_t type);
-		virtual void onTickCondition(ConditionType_t type, int32_t interval, bool& _remove);
+		virtual void onEndCondition(ConditionType_t type, ConditionId_t conditionId);
+		virtual void onTickCondition(ConditionType_t type, ConditionId_t conditionId, int32_t interval, bool& _remove);
 		virtual void onCombatRemoveCondition(const Creature* attacker, Condition* condition);
 		virtual void onTarget(Creature*) {}
 		virtual void onSummonTarget(Creature*, Creature*) {}
@@ -412,10 +407,13 @@ class Creature : virtual public Thing
 		virtual void onTargetDisappear(bool) {}
 		virtual void onFollowCreatureDisappear(bool) {}
 
+		virtual void onCreatureTurn(const Creature*) {}
 		virtual void onCreatureSay(const Creature*, MessageClasses, const std::string&,
 			Position* = NULL) {}
 
+		virtual void onCreatureChangeOutfit(const Creature*, const Outfit_t&) {}
 		virtual void onCreatureConvinced(const Creature*, const Creature*) {}
+		virtual void onCreatureChangeVisible(const Creature*, Visible_t) {}
 		virtual void onPlacedCreature() {}
 		virtual void onRemovedCreature();
 
@@ -450,9 +448,6 @@ class Creature : virtual public Thing
 		bool unregisterCreatureEvent(const std::string& name);
 		void unregisterCreatureEvent(CreatureEventType_t type);
 		CreatureEventList getCreatureEvents(CreatureEventType_t type);
-		bool hasEventRegistered(CreatureEventType_t event) const {
-			return (0 != (scriptEventsBitField & (static_cast<uint64_t>(1) << event)));
-		}
 
 		virtual void setParent(Cylinder* cylinder)
 		{
@@ -476,9 +471,6 @@ class Creature : virtual public Thing
 		bool localMapCache[mapWalkHeight][mapWalkWidth];
 
 		virtual bool useCacheMap() const {return false;}
-		
-		// Wonsr
-		uint64_t battleLock, invulnerable, immuneweapon;
 
 		Position _position;
 		Tile* _tile;
@@ -488,8 +480,6 @@ class Creature : virtual public Thing
 		bool isUpdatingPath;
 		bool checked;
 		StorageMap storageMap;
-
-		uint64_t scriptEventsBitField;
 
 		int32_t checkVector;
 		int32_t health, healthMax;

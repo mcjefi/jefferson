@@ -78,14 +78,13 @@ class Weapon : public Event
 		CombatParams getCombatParam() const {return params;}
 
 		virtual bool useWeapon(Player* player, Item* item, Creature* target) const;
-		virtual int32_t getWeaponDamage(const Player* player, const Creature* target, const Item* item, bool maxDamage = false) const = 0;
+		virtual int32_t getWeaponDamage(const Player* player, const Creature* target, const Item* item, bool& isCritical, bool maxDamage = false) const = 0;
 		virtual int32_t getWeaponElementDamage(const Player*, const Item*, bool = false) const {return 0;}
 
 		uint32_t getReqLevel() const {return level;}
 		uint32_t getReqMagLv() const {return magLevel;}
 		bool hasExhaustion() const {return exhaustion != 0;}
 		bool isPremium() const {return premium;}
-		bool isUniqueItem() const {return uniqueItem;}
 		bool isWieldedUnproperly() const {return wieldUnproperly;}
 
 	protected:
@@ -105,7 +104,7 @@ class Weapon : public Event
 
 		uint16_t id;
 		uint32_t exhaustion;
-		bool enabled, premium, wieldUnproperly, swing, uniqueItem;
+		bool enabled, premium, wieldUnproperly, swing;
 		int32_t level, magLevel, mana, manaPercent, soul;
 
 		AmmoAction_t ammoAction;
@@ -122,7 +121,7 @@ class WeaponMelee : public Weapon
 		virtual ~WeaponMelee() {}
 
 		virtual bool useWeapon(Player* player, Item* item, Creature* target) const;
-		virtual int32_t getWeaponDamage(const Player* player, const Creature* target, const Item* item, bool maxDamage = false) const;
+		virtual int32_t getWeaponDamage(const Player* player, const Creature* target, const Item* item, bool& isCritical, bool maxDamage = false) const;
 		virtual int32_t getWeaponElementDamage(const Player* player, const Item* item, bool maxDamage = false) const;
 
 	protected:
@@ -140,7 +139,7 @@ class WeaponDistance : public Weapon
 		virtual int32_t playerWeaponCheck(Player* player, Creature* target) const;
 
 		virtual bool useWeapon(Player* player, Item* item, Creature* target) const;
-		virtual int32_t getWeaponDamage(const Player* player, const Creature* target, const Item* item, bool maxDamage = false) const;
+		virtual int32_t getWeaponDamage(const Player* player, const Creature* target, const Item* item, bool& isCritical, bool maxDamage = false) const;
 
 	protected:
 		virtual void onUsedAmmo(Player* player, Item* item, Tile* destTile) const;
@@ -158,7 +157,7 @@ class WeaponWand : public Weapon
 		virtual bool configureEvent(xmlNodePtr p);
 		virtual bool configureWeapon(const ItemType& it);
 
-		virtual int32_t getWeaponDamage(const Player* player, const Creature* target, const Item* item, bool maxDamage = false) const;
+		virtual int32_t getWeaponDamage(const Player* player, const Creature* target, const Item* item, bool& isCritical, bool maxDamage = false) const;
 
 	protected:
 		virtual bool getSkillType(const Player*, const Item*, skills_t&, uint64_t&) const {return false;}

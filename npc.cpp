@@ -39,9 +39,9 @@ extern Game g_game;
 extern Spells* g_spells;
 extern Npcs g_npcs;
 
+AutoList<Npc> Npc::autoList;
 uint32_t Npc::npcAutoID = 0x80000000;
 
-AutoList<Npc> Npc::autoList;
 #ifdef __ENABLE_SERVER_DIAGNOSTIC__
 uint32_t Npc::npcCount = 0;
 #endif
@@ -992,7 +992,7 @@ ResponseList Npc::parseInteractionNode(xmlNodePtr node)
 									if(readXMLString(subNode, "time", strValue))
 									{
 										action.actionType = ACTION_SETSTORAGE;
-										std::stringstream s;
+										std::ostringstream s;
 
 										s << time(NULL) + atoi(strValue.c_str());
 										action.strValue = s.str();
@@ -1335,6 +1335,7 @@ void Npc::onThink(uint32_t interval)
 
 	SpectatorVec tmpList;
 	g_game.getSpectators(tmpList, getPosition(), true, true);
+
 	if(tmpList.size()) //loop only if there's at least one spectator
 	{
 		for(SpectatorVec::const_iterator it = tmpList.begin(); it != tmpList.end(); ++it)
@@ -1778,7 +1779,7 @@ void Npc::executeResponse(Player* player, NpcState* npcState, const NpcResponse*
 					if(interface.reserveEnv())
 					{
 						ScriptEnviroment* env = m_interface->getEnv();
-						std::stringstream scriptstream;
+						std::ostringstream scriptstream;
 
 						//attach various variables that could be interesting
 						scriptstream << "local cid = " << env->addThing(player) << std::endl;
@@ -1943,9 +1944,8 @@ void Npc::doSay(const std::string& text, MessageClasses type, Player* player)
 	}
 	else
 	{
-		std::string locText = Localization::t(player->getLanguage(), text);
-        player->sendCreatureSay(this, type, locText);
-		player->onCreatureSay(this, type, locText);
+		player->sendCreatureSay(this, type, text);
+		player->onCreatureSay(this, type, text);
 	}
 }
 
@@ -1978,6 +1978,9 @@ void Npc::onPlayerTrade(Player* player, ShopEvent_t type, int32_t callback, uint
 	{
 		if(NpcState* npcState = getState(player, true))
 		{
+			if(amount <= 0)
+				amount = 1;
+
 			npcState->amount = amount;
 			npcState->subType = count;
 			npcState->itemId = itemId;
@@ -2296,7 +2299,7 @@ const NpcResponse* Npc::getResponse(const ResponseList& list, const Player* play
 			player->getStorage((*it)->getStorageId(), value);
 			if(asLowerCaseString(storageValue) == "_time")
 			{
-				std::stringstream s;
+				std::ostringstream s;
 				s << time(NULL);
 				storageValue = s.str();
 			}
@@ -2537,7 +2540,7 @@ std::string Npc::formatResponse(Creature* creature, const NpcState* npcState, co
 {
 	std::string responseString = response->getText();
 
-	std::stringstream ss;
+	std::ostringstream ss;
 	ss << npcState->price * npcState->amount;
 	replaceString(responseString, "|PRICE|", ss.str());
 
@@ -2972,7 +2975,7 @@ void NpcEvents::onCreatureAppear(const Creature* creature)
 		lua_State* L = m_interface->getState();
 
 		#ifdef __DEBUG_LUASCRIPTS__
-		std::stringstream desc;
+		std::ostringstream desc;
 		desc << "npc " << m_npc->getName();
 		env->setEvent(desc.str());
 		#endif
@@ -3003,7 +3006,7 @@ void NpcEvents::onCreatureDisappear(const Creature* creature)
 		lua_State* L = m_interface->getState();
 
 		#ifdef __DEBUG_LUASCRIPTS__
-		std::stringstream desc;
+		std::ostringstream desc;
 		desc << "npc " << m_npc->getName();
 		env->setEvent(desc.str());
 		#endif
@@ -3034,7 +3037,7 @@ void NpcEvents::onCreatureMove(const Creature* creature, const Position& oldPos,
 		lua_State* L = m_interface->getState();
 
 		#ifdef __DEBUG_LUASCRIPTS__
-		std::stringstream desc;
+		std::ostringstream desc;
 		desc << "npc " << m_npc->getName();
 		env->setEvent(desc.str());
 		#endif
@@ -3068,7 +3071,7 @@ void NpcEvents::onCreatureSay(const Creature* creature, MessageClasses type, con
 		lua_State* L = m_interface->getState();
 
 		#ifdef __DEBUG_LUASCRIPTS__
-		std::stringstream desc;
+		std::ostringstream desc;
 		desc << "npc " << m_npc->getName();
 		env->setEvent(desc.str());
 		#endif
@@ -3103,7 +3106,7 @@ void NpcEvents::onPlayerTrade(const Player* player, int32_t callback, uint16_t i
 		lua_State* L = m_interface->getState();
 
 		#ifdef __DEBUG_LUASCRIPTS__
-		std::stringstream desc;
+		std::ostringstream desc;
 		desc << "npc " << m_npc->getName();
 		env->setEvent(desc.str());
 		#endif
@@ -3142,7 +3145,7 @@ void NpcEvents::onPlayerEndTrade(const Player* player)
 		lua_State* L = m_interface->getState();
 
 		#ifdef __DEBUG_LUASCRIPTS__
-		std::stringstream desc;
+		std::ostringstream desc;
 		desc << "npc " << m_npc->getName();
 		env->setEvent(desc.str());
 		#endif
@@ -3173,7 +3176,7 @@ void NpcEvents::onPlayerCloseChannel(const Player* player)
 		lua_State* L = m_interface->getState();
 
 		#ifdef __DEBUG_LUASCRIPTS__
-		std::stringstream desc;
+		std::ostringstream desc;
 		desc << "npc " << m_npc->getName();
 		env->setEvent(desc.str());
 		#endif
@@ -3203,7 +3206,7 @@ void NpcEvents::onThink()
 		ScriptEnviroment* env = m_interface->getEnv();
 
 		#ifdef __DEBUG_LUASCRIPTS__
-		std::stringstream desc;
+		std::ostringstream desc;
 		desc << "npc " << m_npc->getName();
 		env->setEvent(desc.str());
 		#endif

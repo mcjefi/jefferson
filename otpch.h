@@ -26,6 +26,7 @@
 #define strcasecmp _stricmp
 #endif
 
+
 #if defined WINDOWS
 #include <winerror.h>
 #endif
@@ -44,8 +45,3 @@
 //otserv
 #include "configmanager.h"
 #include "thing.h"
-
-//GUI
-#include "gui.h"
-#include "inputbox.h"
-#include "playerbox.h"

@@ -158,8 +158,8 @@ class ItemType
 			id, clientId, maxItems, slotPosition, wieldPosition, speed, maxTextLength, writeOnceItemId, wareId,
 			premiumDays;
 
-		int32_t attack, extraAttack, defense, extraDefense, armor, breakChance, hitChance, maxHitChance,
-			runeLevel, runeMagLevel, lightLevel, lightColor, decayTo, rotateTo, alwaysOnTopOrder, criticalHitChance;
+		int32_t attack, criticalHitChance, extraAttack, defense, extraDefense, armor, breakChance, hitChance, maxHitChance,
+			runeLevel, runeMagLevel, lightLevel, lightColor, decayTo, rotateTo, alwaysOnTopOrder;
 
 		int32_t extraAttackChance, extraDefenseChance, attackSpeedChance;
 		int32_t armorRndMin, armorRndMax, defenseRndMin, defenseRndMax, extraDefenseRndMin,
@@ -176,11 +176,6 @@ class ItemType
 		itemgroup_t group;
 		ItemTypes_t type;
 		float weight;
-		
-		
-		// Wonsr	
-		uint16_t rareSystemR, rareSystemE, rareSystemL;
-		
 };
 
 template<typename A>

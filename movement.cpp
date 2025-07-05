@@ -55,6 +55,7 @@ int32_t MoveEventScript::luaCallFunction(lua_State* L)
 	if(event->getEventType() == MOVE_EVENT_EQUIP || event->getEventType() == MOVE_EVENT_DE_EQUIP)
 	{
 		ScriptEnviroment* env = getEnv();
+		bool isLogInOut = popBoolean(L);
 		bool boolean = popBoolean(L);
 		slots_t slot = (slots_t)popNumber(L);
 
@@ -75,9 +76,9 @@ int32_t MoveEventScript::luaCallFunction(lua_State* L)
 		}
 
 		if(event->getEventType() != MOVE_EVENT_EQUIP)
-			lua_pushboolean(L, MoveEvent::DeEquipItem(event, player, item, slot, boolean));
+			lua_pushboolean(L, MoveEvent::DeEquipItem(event, player, item, slot, boolean, isLogInOut));
 		else
-			lua_pushboolean(L, MoveEvent::EquipItem(event, player, item, slot, boolean));
+			lua_pushboolean(L, MoveEvent::EquipItem(event, player, item, slot, boolean, isLogInOut));
 
 		return 1;
 	}
@@ -405,7 +406,7 @@ MoveEvent* MoveEvents::getEvent(Item* item, uint16_t uniqueId, uint16_t actionId
 {
 	MoveListMap::iterator it;
 
-	if(uniqueId)
+	if (uniqueId)
 	{
 		it = m_uniqueIdMap.find(uniqueId);
 		if(it != m_uniqueIdMap.end())
@@ -416,7 +417,7 @@ MoveEvent* MoveEvents::getEvent(Item* item, uint16_t uniqueId, uint16_t actionId
 		}
 	}
 
-	if(actionId)
+	if (actionId)
 	{
 		it = m_actionIdMap.find(actionId);
 		if(it != m_actionIdMap.end())
@@ -584,7 +585,7 @@ uint32_t MoveEvents::onCreatureMove(Creature* actor, Creature* creature, const T
 		//We cannot use iterators here since the scripts can invalidate the iterator
 		for(uint32_t i = 0; i < m_lastCacheItemVector.size(); ++i)
 		{
-			if((tileItem = m_lastCacheItemVector[i]) && (moveEvent = getEvent(tileItem, tileItem->getUniqueId(), tileItem->getActionId(), eventType)))
+			if ((tileItem = m_lastCacheItemVector[i]) && (moveEvent = getEvent(tileItem, tileItem->getUniqueId(), tileItem->getActionId(), eventType)))
 				ret &= moveEvent->fireStepEvent(actor, creature, tileItem, tile->getPosition(), fromPos, toPos);
 		}
 
@@ -601,7 +602,7 @@ uint32_t MoveEvents::onCreatureMove(Creature* actor, Creature* creature, const T
 		if(!(thing = tile->__getThing(i)) || !(tileItem = thing->getItem()))
 			continue;
 
-		if((moveEvent = getEvent(tileItem, tileItem->getUniqueId(), tileItem->getActionId(), eventType)))
+		if ((moveEvent = getEvent(tileItem, tileItem->getUniqueId(), tileItem->getActionId(), eventType)))
 		{
 			m_lastCacheItemVector.push_back(tileItem);
 			ret &= moveEvent->fireStepEvent(actor, creature, tileItem, tile->getPosition(), fromPos, toPos);
@@ -613,18 +614,18 @@ uint32_t MoveEvents::onCreatureMove(Creature* actor, Creature* creature, const T
 	return ret;
 }
 
-bool MoveEvents::onPlayerEquip(Player* player, Item* item, slots_t slot, bool isCheck)
+bool MoveEvents::onPlayerEquip(Player* player, Item* item, slots_t slot, bool isCheck, bool isLogin)
 {
 	if(MoveEvent* moveEvent = getEvent(item, MOVE_EVENT_EQUIP, slot))
-		return moveEvent->fireEquip(player, item, slot, isCheck);
+		return moveEvent->fireEquip(player, item, slot, isCheck, isLogin);
 
 	return true;
 }
 
-bool MoveEvents::onPlayerDeEquip(Player* player, Item* item, slots_t slot, bool isRemoval)
+bool MoveEvents::onPlayerDeEquip(Player* player, Item* item, slots_t slot, bool isRemoval, bool isLogout)
 {
 	if(MoveEvent* moveEvent = getEvent(item, MOVE_EVENT_DE_EQUIP, slot))
-		return moveEvent->fireEquip(player, item, slot, isRemoval);
+		return moveEvent->fireEquip(player, item, slot, isRemoval, isLogout);
 
 	return true;
 }
@@ -659,7 +660,7 @@ uint32_t MoveEvents::onItemMove(Creature* actor, Item* item, Tile* tile, bool is
 		//We cannot use iterators here since the scripts can invalidate the iterator
 		for(uint32_t i = 0; i < m_lastCacheItemVector.size(); ++i)
 		{
-			if((tileItem = m_lastCacheItemVector[i]) && tileItem != item
+			if ((tileItem = m_lastCacheItemVector[i]) && tileItem != item
 				&& (moveEvent = getEvent(tileItem, tileItem->getUniqueId(), tileItem->getActionId(), tileEventType)))
 				ret &= moveEvent->fireAddRemItem(actor, item, tileItem, tile->getPosition());
 		}
@@ -677,7 +678,7 @@ uint32_t MoveEvents::onItemMove(Creature* actor, Item* item, Tile* tile, bool is
 		if(!(thing = tile->__getThing(i)) || !(tileItem = thing->getItem()) || tileItem == item)
 			continue;
 
-		if((moveEvent = getEvent(tileItem, tileItem->getUniqueId(), tileItem->getActionId(), tileEventType)))
+		if ((moveEvent = getEvent(tileItem, tileItem->getUniqueId(), tileItem->getActionId(), tileEventType)))
 		{
 			m_lastCacheItemVector.push_back(tileItem);
 			ret &= moveEvent->fireAddRemItem(actor, item, tileItem, tile->getPosition());
@@ -727,7 +728,6 @@ Event(_interface)
 	reqLevel = 0;
 	reqMagLevel = 0;
 	premium = false;
-	uniqueItem = false;
 }
 
 MoveEvent::MoveEvent(const MoveEvent* copy):
@@ -747,7 +747,6 @@ Event(copy)
 		vocationString = copy->vocationString;
 		premium = copy->premium;
 		vocEquipMap = copy->vocEquipMap;
-		uniqueItem = copy->uniqueItem;
 	}
 }
 
@@ -892,13 +891,6 @@ bool MoveEvent::configureEvent(xmlNodePtr p)
 				if(premium)
 					wieldInfo |= WIELDINFO_PREMIUM;
 			}
-			
-			if(readXMLString(p, "uniqueitem", strValue))
-			{
-				uniqueItem = booleanString(strValue);
-				if(uniqueItem)
-					wieldInfo |= WIELDINFO_UNIQUEITEM;
-			}
 
 			StringVec vocStringVec;
 			std::string error = "";
@@ -987,7 +979,7 @@ uint32_t MoveEvent::AddItemField(Item* item)
 	return LUA_ERROR_ITEM_NOT_FOUND;
 }
 
-bool MoveEvent::EquipItem(MoveEvent* moveEvent, Player* player, Item* item, slots_t slot, bool isCheck)
+bool MoveEvent::EquipItem(MoveEvent* moveEvent, Player* player, Item* item, slots_t slot, bool isCheck, bool isLogin)
 {
 	if(player->isItemAbilityEnabled(slot))
 		return true;
@@ -1002,181 +994,206 @@ bool MoveEvent::EquipItem(MoveEvent* moveEvent, Player* player, Item* item, slot
 
 		if(!moveEvent->getVocEquipMap().empty() && moveEvent->getVocEquipMap().find(player->getVocationId()) == moveEvent->getVocEquipMap().end())
 			return false;
-		
-		if(moveEvent->isUniqueItem() && player->getGUID() != item->getOwner())
-			return false;
 	}
 
 	if(isCheck)
 		return true;
 
 	const ItemType& it = Item::items[item->getID()];
-	if(it.transformEquipTo)
-	{
+	player->setItemAbility(slot, true);
+	if (it.hasAbilities()) {
+		if (it.abilities->invisible) {
+			Condition* condition = Condition::createCondition((ConditionId_t)slot, CONDITION_INVISIBLE, -1, 0);
+			player->addCondition(condition);
+		}
+
+		if (it.abilities->manaShield) {
+			Condition* condition = Condition::createCondition((ConditionId_t)slot, CONDITION_MANASHIELD, -1, 0);
+			player->addCondition(condition);
+		}
+
+		if (it.abilities->speed)
+			g_game.changeSpeed(player, it.abilities->speed);
+
+		if (it.abilities->conditionSuppressions) {
+			player->setConditionSuppressions(it.abilities->conditionSuppressions, false);
+			player->sendIcons();
+		}
+
+		if (it.abilities->regeneration) {
+			Condition* condition = Condition::createCondition((ConditionId_t)slot, CONDITION_REGENERATION, -1, 0);
+			if (it.abilities->healthGain)
+				condition->setParam(CONDITIONPARAM_HEALTHGAIN, it.abilities->healthGain);
+
+			if (it.abilities->healthTicks)
+				condition->setParam(CONDITIONPARAM_HEALTHTICKS, it.abilities->healthTicks);
+
+			if (it.abilities->manaGain)
+				condition->setParam(CONDITIONPARAM_MANAGAIN, it.abilities->manaGain);
+
+			if (it.abilities->manaTicks)
+				condition->setParam(CONDITIONPARAM_MANATICKS, it.abilities->manaTicks);
+
+			player->addCondition(condition);
+		}
+
+		bool needUpdateSkills = false;
+		bool needUpdateStats = false;
+
+		if (item->magicAttributes.size() > 0)
+		{
+			std::vector<MagicAttributes> magicAttributes = item->magicAttributes;
+			for(std::vector<MagicAttributes>::const_iterator it = magicAttributes.begin(); it != magicAttributes.end(); ++it)
+			{
+				if (it->skillType != SKILL_NONE)
+				{
+					player->setVarSkill(it->skillType, it->value);
+					needUpdateSkills = true;
+				}
+
+				if (it->statType != STAT_NONE)
+				{
+					player->setVarStats(it->statType, it->value);
+					needUpdateStats = true;
+				}
+			}
+		}
+		for (uint32_t i = SKILL_FIRST; i <= SKILL_LAST; ++i) {
+			if (it.abilities->skills[i]) {
+				player->setVarSkill((skills_t)i, it.abilities->skills[i]);
+				if (!needUpdateSkills)
+					needUpdateSkills = true;
+			}
+
+			if (it.abilities->skillsPercent[i]) {
+				player->setVarSkill((skills_t)i, (int32_t)(player->getSkill((skills_t)i, SKILL_LEVEL) * ((it.abilities->skillsPercent[i] - 100) / 100.f)));
+				if (!needUpdateSkills)
+					needUpdateSkills = true;
+			}
+		}
+
+		if (needUpdateSkills)
+			player->sendSkills();
+			
+		for (uint32_t s = STAT_FIRST; s <= STAT_LAST; ++s) {
+			if (it.abilities->stats[s]) {
+				player->setVarStats((stats_t)s, it.abilities->stats[s]);
+				if (!needUpdateStats)
+					needUpdateStats = true;
+			}
+
+			if (it.abilities->statsPercent[s]) {
+				player->setVarStats((stats_t)s, (int32_t)(player->getDefaultStats((stats_t)s) * ((it.abilities->statsPercent[s] - 100) / 100.f)));
+				if (!needUpdateStats)
+					needUpdateStats = true;
+			}
+		}
+
+		if (needUpdateStats)
+			player->sendStats();
+	}
+
+	if (!isLogin) {
+		for (CreatureEvent* it : player->getCreatureEvents(CREATURE_EVENT_EQUIP_ITEM)) {
+			it->executeEquipItemEvent(player, item, slot);
+		}
+	}
+
+	if (it.transformEquipTo) {
 		Item* newItem = g_game.transformItem(item, it.transformEquipTo);
 		g_game.startDecay(newItem);
 	}
-
-	player->setItemAbility(slot, true);
-	if(!it.hasAbilities())
-		return true;
-
-	if(it.abilities->invisible)
-	{
-		Condition* condition = Condition::createCondition((ConditionId_t)slot, CONDITION_INVISIBLE, -1, 0);
-		player->addCondition(condition);
-	}
-
-	if(it.abilities->manaShield)
-	{
-		Condition* condition = Condition::createCondition((ConditionId_t)slot, CONDITION_MANASHIELD, -1, 0);
-		player->addCondition(condition);
-	}
-
-	if(it.abilities->speed)
-		g_game.changeSpeed(player, it.abilities->speed);
-
-	if(it.abilities->conditionSuppressions)
-	{
-		player->setConditionSuppressions(it.abilities->conditionSuppressions, false);
-		player->sendIcons();
-	}
-
-	if(it.abilities->regeneration)
-	{
-		Condition* condition = Condition::createCondition((ConditionId_t)slot, CONDITION_REGENERATION, -1, 0);
-		if(it.abilities->healthGain)
-			condition->setParam(CONDITIONPARAM_HEALTHGAIN, it.abilities->healthGain);
-
-		if(it.abilities->healthTicks)
-			condition->setParam(CONDITIONPARAM_HEALTHTICKS, it.abilities->healthTicks);
-
-		if(it.abilities->manaGain)
-			condition->setParam(CONDITIONPARAM_MANAGAIN, it.abilities->manaGain);
-
-		if(it.abilities->manaTicks)
-			condition->setParam(CONDITIONPARAM_MANATICKS, it.abilities->manaTicks);
-
-		player->addCondition(condition);
-	}
-
-	bool needUpdateSkills = false;
-	for(uint32_t i = SKILL_FIRST; i <= SKILL_LAST; ++i)
-	{
-		if(it.abilities->skills[i])
-		{
-			player->setVarSkill((skills_t)i, it.abilities->skills[i]);
-			if(!needUpdateSkills)
-				needUpdateSkills = true;
-		}
-
-		if(it.abilities->skillsPercent[i])
-		{
-			player->setVarSkill((skills_t)i, (int32_t)(player->getSkill((skills_t)i, SKILL_LEVEL) * ((it.abilities->skillsPercent[i] - 100) / 100.f)));
-			if(!needUpdateSkills)
-				needUpdateSkills = true;
-		}
-	}
-
-	if(needUpdateSkills)
-		player->sendSkills();
-
-	bool needUpdateStats = false;
-	for(uint32_t s = STAT_FIRST; s <= STAT_LAST; ++s)
-	{
-		if(it.abilities->stats[s])
-		{
-			player->setVarStats((stats_t)s, it.abilities->stats[s]);
-			if(!needUpdateStats)
-				needUpdateStats = true;
-		}
-
-		if(it.abilities->statsPercent[s])
-		{
-			player->setVarStats((stats_t)s, (int32_t)(player->getDefaultStats((stats_t)s) * ((it.abilities->statsPercent[s] - 100) / 100.f)));
-			if(!needUpdateStats)
-				needUpdateStats = true;
-		}
-	}
-
-	if(needUpdateStats)
-		player->sendStats();
-
 	return true;
 }
 
-bool MoveEvent::DeEquipItem(MoveEvent*, Player* player, Item* item, slots_t slot, bool isRemoval)
+bool MoveEvent::DeEquipItem(MoveEvent*, Player* player, Item* item, slots_t slot, bool isRemoval, bool isLogout)
 {
 	if(!player->isItemAbilityEnabled(slot))
 		return true;
 
 	const ItemType& it = Item::items[item->getID()];
-	if(isRemoval && it.transformDeEquipTo)
-	{
+	player->setItemAbility(slot, false);
+	if (it.hasAbilities()) {
+		if (it.abilities->invisible)
+			player->removeCondition(CONDITION_INVISIBLE, (ConditionId_t)slot);
+
+		if (it.abilities->manaShield)
+			player->removeCondition(CONDITION_MANASHIELD, (ConditionId_t)slot);
+
+		if (it.abilities->speed)
+			g_game.changeSpeed(player, -it.abilities->speed);
+
+		if (it.abilities->conditionSuppressions) {
+			player->setConditionSuppressions(it.abilities->conditionSuppressions, true);
+			player->sendIcons();
+		}
+
+		if (it.abilities->regeneration)
+			player->removeCondition(CONDITION_REGENERATION, (ConditionId_t)slot);
+
+		bool needUpdateSkills = false;
+		bool needUpdateStats = false;
+		if (item->magicAttributes.size() > 0)
+		{
+			std::vector<MagicAttributes> magicAttributes = item->magicAttributes;
+			for(std::vector<MagicAttributes>::const_iterator it = magicAttributes.begin(); it != magicAttributes.end(); ++it)
+			{
+				if (it->skillType != SKILL_NONE)
+				{
+					player->setVarSkill(it->skillType, -(it->value));
+					needUpdateSkills = true;
+					//
+				}
+
+				if (it->statType != STAT_NONE)
+				{
+					player->setVarStats(it->statType, -(it->value));
+					needUpdateStats = true;
+				}
+			}
+		}	
+		
+		for (uint32_t i = SKILL_FIRST; i <= SKILL_LAST; ++i) {
+			if (it.abilities->skills[i]) {
+				needUpdateSkills = true;
+				player->setVarSkill((skills_t)i, -it.abilities->skills[i]);
+			}
+
+			if (it.abilities->skillsPercent[i]) {
+				needUpdateSkills = true;
+				player->setVarSkill((skills_t)i, -(int32_t)(player->getSkill((skills_t)i, SKILL_LEVEL) * ((it.abilities->skillsPercent[i] - 100) / 100.f)));
+			}
+		}
+
+		if (needUpdateSkills)
+			player->sendSkills();
+
+		for (uint32_t s = STAT_FIRST; s <= STAT_LAST; ++s) {
+			if (it.abilities->stats[s]) {
+				needUpdateStats = true;
+				player->setVarStats((stats_t)s, -it.abilities->stats[s]);
+			}
+
+			if (it.abilities->statsPercent[s]) {
+				needUpdateStats = true;
+				player->setVarStats((stats_t)s, -(int32_t)(player->getDefaultStats((stats_t)s) * ((it.abilities->statsPercent[s] - 100) / 100.f)));
+			}
+		}
+
+		if (needUpdateStats)
+			player->sendStats();
+	}
+
+	if (!isLogout) {
+		for (auto ev : player->getCreatureEvents(CREATURE_EVENT_UNEQUIP_ITEM)) {
+			ev->executeEquipItemEvent(player, item, slot);
+		}
+	}
+
+	if (isRemoval && it.transformDeEquipTo) {
 		g_game.transformItem(item, it.transformDeEquipTo);
 		g_game.startDecay(item);
 	}
-
-	player->setItemAbility(slot, false);
-	if(!it.hasAbilities())
-		return true;
-
-	if(it.abilities->invisible)
-		player->removeCondition(CONDITION_INVISIBLE, (ConditionId_t)slot);
-
-	if(it.abilities->manaShield)
-		player->removeCondition(CONDITION_MANASHIELD, (ConditionId_t)slot);
-
-	if(it.abilities->speed)
-		g_game.changeSpeed(player, -it.abilities->speed);
-
-	if(it.abilities->conditionSuppressions)
-	{
-		player->setConditionSuppressions(it.abilities->conditionSuppressions, true);
-		player->sendIcons();
-	}
-
-	if(it.abilities->regeneration)
-		player->removeCondition(CONDITION_REGENERATION, (ConditionId_t)slot);
-
-	bool needUpdateSkills = false;
-	for(uint32_t i = SKILL_FIRST; i <= SKILL_LAST; ++i)
-	{
-		if(it.abilities->skills[i])
-		{
-			needUpdateSkills = true;
-			player->setVarSkill((skills_t)i, -it.abilities->skills[i]);
-		}
-
-		if(it.abilities->skillsPercent[i])
-		{
-			needUpdateSkills = true;
-			player->setVarSkill((skills_t)i, -(int32_t)(player->getSkill((skills_t)i, SKILL_LEVEL) * ((it.abilities->skillsPercent[i] - 100) / 100.f)));
-		}
-	}
-
-	if(needUpdateSkills)
-		player->sendSkills();
-
-	bool needUpdateStats = false;
-	for(uint32_t s = STAT_FIRST; s <= STAT_LAST; ++s)
-	{
-		if(it.abilities->stats[s])
-		{
-			needUpdateStats = true;
-			player->setVarStats((stats_t)s, -it.abilities->stats[s]);
-		}
-
-		if(it.abilities->statsPercent[s])
-		{
-			needUpdateStats = true;
-			player->setVarStats((stats_t)s, -(int32_t)(player->getDefaultStats((stats_t)s) * ((it.abilities->statsPercent[s] - 100) / 100.f)));
-		}
-	}
-
-	if(needUpdateStats)
-		player->sendStats();
-
 	return true;
 }
 
@@ -1199,7 +1216,7 @@ uint32_t MoveEvent::executeStep(Creature* actor, Creature* creature, Item* item,
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(creature->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 			scriptstream << "local cid = " << env->addThing(creature) << std::endl;
 
 			env->streamThing(scriptstream, "item", item, env->addThing(item));
@@ -1225,7 +1242,7 @@ uint32_t MoveEvent::executeStep(Creature* actor, Creature* creature, Item* item,
 		else
 		{
 			#ifdef __DEBUG_LUASCRIPTS__
-			std::stringstream desc;
+			std::ostringstream desc;
 			desc << creature->getName() << " itemid: " << item->getID() << " - " << pos;
 			env->setEvent(desc.str());
 			#endif
@@ -1257,18 +1274,18 @@ uint32_t MoveEvent::executeStep(Creature* actor, Creature* creature, Item* item,
 	}
 }
 
-bool MoveEvent::fireEquip(Player* player, Item* item, slots_t slot, bool boolean)
+bool MoveEvent::fireEquip(Player* player, Item* item, slots_t slot, bool boolean, bool isLogInOut)
 {
 	if(isScripted())
-		return executeEquip(player, item, slot, boolean);
+		return executeEquip(player, item, slot, boolean, isLogInOut);
 
-	return equipFunction(this, player, item, slot, boolean);
+	return equipFunction(this, player, item, slot, boolean, isLogInOut);
 }
 
-bool MoveEvent::executeEquip(Player* player, Item* item, slots_t slot, bool boolean)
+bool MoveEvent::executeEquip(Player* player, Item* item, slots_t slot, bool boolean, bool isLogInOut)
 {
-	//onEquip(cid, item, slot, boolean)
-	//onDeEquip(cid, item, slot, boolean)
+	//onEquip(cid, item, slot, isCheck, isLogin)
+	//onDeEquip(cid, item, slot, isRemoval, isLogout)
 	if(m_interface->reserveEnv())
 	{
 		MoveEventScript::event = this;
@@ -1276,12 +1293,13 @@ bool MoveEvent::executeEquip(Player* player, Item* item, slots_t slot, bool bool
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(player->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 
 			scriptstream << "local cid = " << env->addThing(player) << std::endl;
 			env->streamThing(scriptstream, "item", item, env->addThing(item));
 			scriptstream << "local slot = " << slot << std::endl;
 			scriptstream << "local boolean = " << (boolean ? "true" : "false") << std::endl;
+			scriptstream << "local isLogInOut = " << (isLogInOut ? "true" : "false") << std::endl;
 
 			if(m_scriptData)
 				scriptstream << *m_scriptData;
@@ -1299,7 +1317,7 @@ bool MoveEvent::executeEquip(Player* player, Item* item, slots_t slot, bool bool
 		else
 		{
 			#ifdef __DEBUG_LUASCRIPTS__
-			std::stringstream desc;
+			std::ostringstream desc;
 			desc << player->getName() << " itemid: " << item->getID() << " slot: " << slot;
 			env->setEvent(desc.str());
 			#endif
@@ -1314,8 +1332,9 @@ bool MoveEvent::executeEquip(Player* player, Item* item, slots_t slot, bool bool
 			LuaInterface::pushThing(L, item, env->addThing(item));
 			lua_pushnumber(L, slot);
 			lua_pushboolean(L, boolean);
+			lua_pushboolean(L, isLogInOut);
 
-			bool result = m_interface->callFunction(4);
+			bool result = m_interface->callFunction(5);
 			m_interface->releaseEnv();
 			return result;
 		}
@@ -1346,7 +1365,7 @@ uint32_t MoveEvent::executeAddRemItem(Creature* actor, Item* item, Item* tileIte
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(pos);
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 
 			env->streamThing(scriptstream, "moveItem", item, env->addThing(item));
 			env->streamThing(scriptstream, "tileItem", tileItem, env->addThing(tileItem));
@@ -1370,7 +1389,7 @@ uint32_t MoveEvent::executeAddRemItem(Creature* actor, Item* item, Item* tileIte
 		else
 		{
 			#ifdef __DEBUG_LUASCRIPTS__
-			std::stringstream desc;
+			std::ostringstream desc;
 			if(tileItem)
 				desc << "tileid: " << tileItem->getID();
 

@@ -37,6 +37,7 @@
 #include "game.h"
 #include "movement.h"
 
+
 extern Game g_game;
 extern ConfigManager g_config;
 extern MoveEvents* g_moveEvents;
@@ -177,6 +178,7 @@ Item::Item(const uint16_t type, uint16_t amount/* = 0*/):
 
 	setItemCount(1);
 	setDefaultDuration();
+	itemUid = -1;
 
 	const ItemType& it = items[type];
 	if(it.isFluidContainer() || it.isSplash())
@@ -228,42 +230,9 @@ Item* Item::clone() const
 	return tmp;
 }
 
-void Item::generateSerial()
-{
-	std::string letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-	std::string serial = "";
-	for (int32_t i = 1; i < 6; i++)
-	{
-		int32_t l = rand() % (letters.length() - 1) + 1;
-		serial += letters.substr(l, 1);
-	}
-	serial += "-";
-	for (int32_t i = 1; i < 6; i++)
-	{
-		int32_t l = rand() % (letters.length() - 1) + 1;
-		serial += letters.substr(l, 1);
-	}
-	serial += "-";
-	for (int32_t i = 1; i < 6; i++)
-	{
-		int32_t l = rand() % (letters.length() - 1) + 1;
-		serial += letters.substr(l, 1);
-	}
-	serial += "-";
-	for (int32_t i = 1; i < 6; i++)
-	{
-		int32_t l = rand() % (letters.length() - 1) + 1;
-		serial += letters.substr(l, 1);
-	}
-
-	std::string key = "serial";
-	this->setAttribute(key.c_str(), serial);
-	serial = "";
-}
-
 void Item::copyAttributes(Item* item)
 {
-	if(item && item->attributes && !item->attributes->empty())
+	if (item && item->attributes && !item->attributes->empty())
 	{
 		createAttributes();
 		*attributes = *item->attributes;
@@ -272,17 +241,6 @@ void Item::copyAttributes(Item* item)
 
 	eraseAttribute("decaying");
 	duration = 0;
-}
-
-void Item::copyAllAttributes(Item* item)
-{
-	if(item && item->attributes && !item->attributes->empty())
-	{
-		createAttributes();
-		*attributes = *item->attributes;
-	}
-	
-	duration = item->duration;
 }
 
 void Item::makeUnique(Item* parent)
@@ -323,14 +281,14 @@ void Item::setID(uint16_t newId)
 	id = newId;
 
 	uint32_t newDuration = it.decayTime * 1000;
-	if(!newDuration && !it.stopTime && it.decayTo == -1)
+	if (!newDuration && !it.stopTime && it.decayTo == -1)
 	{
 		eraseAttribute("decaying");
 		duration = -1;
 	}
 
 	eraseAttribute("corpseowner");
-	if(newDuration > 0 && (!pit.stopTime || duration == 0))
+	if (newDuration > 0 && (!pit.stopTime || duration == 0))
 	{
 		setDecaying(DECAYING_FALSE);
 		setDuration(newDuration);
@@ -419,7 +377,8 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			uint16_t uid;
 			if(!propStream.getShort(uid))
 				return ATTR_READ_ERROR;
-
+			
+			itemUid = uid;
 			setUniqueId(uid);
 			break;
 		}
@@ -453,7 +412,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			setAttribute("article", article);
 			break;
 		}
-		
+
 		case ATTR_CRITICALHITCHANCE:
 		{
 			int32_t criticalHitChance;
@@ -620,6 +579,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.getLong((uint32_t&)duration))
 				return ATTR_READ_ERROR;
 
+			//setAttribute("duration", duration);
 			this->duration = duration;
 			break;
 		}
@@ -704,12 +664,6 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!unique && hasIntegerAttribute("uid")) // unfortunately we have to do this
 				ScriptEnviroment::addUniqueThing(this);
 
-			bool ok;
-			int32_t dur = getIntegerAttribute("duration", ok);
-			if (ok) {
-				duration = dur;
-			}
-
 			// this attribute has a custom behavior as well
 			if(getDecaying() != DECAYING_FALSE)
 				setDecaying(DECAYING_PENDING);
@@ -748,19 +702,19 @@ bool Item::unserializeAttr(PropStream& propStream)
 
 bool Item::serializeAttr(PropWriteStream& propWriteStream) const
 {
-	if(isStackable() || isFluidContainer() || isSplash())
+	if (isStackable() || isFluidContainer() || isSplash())
 	{
 		propWriteStream.addByte(ATTR_COUNT);
 		propWriteStream.addByte((uint8_t)getSubType());
 	}
 
-	if(duration != 0)
+	if (duration != 0)
 	{
 		propWriteStream.addByte(ATTR_DURATION);
 		propWriteStream.addType(duration);
 	}
 
-	if(attributes && !attributes->empty())
+	if (attributes && !attributes->empty())
 	{
 		propWriteStream.addByte(ATTR_ATTRIBUTE_MAP);
 		serializeMap(propWriteStream);
@@ -883,7 +837,7 @@ double Item::getWeight() const
 std::string Item::getDescription(const ItemType& it, int32_t lookDistance, const Item* item/* = NULL*/,
 	int32_t subType/* = -1*/, bool addArticle/* = true*/)
 {
-	std::stringstream s;
+	std::ostringstream s;
 	s << getNameDescription(it, item, subType, addArticle);
 	if(item)
 		subType = item->getSubType();
@@ -910,7 +864,7 @@ std::string Item::getDescription(const ItemType& it, int32_t lookDistance, const
 			if(g_config.getBool(ConfigManager::USE_RUNE_REQUIREMENTS) && it.runeMagLevel > 0)
 			{
 				begin = false;
-				s << " " << (begin ? "with" : "and") << " ninjutsu " << it.runeMagLevel;
+				s << " " << (begin ? "with" : "and") << " magic level " << it.runeMagLevel;
 			}
 
 			if(g_config.getBool(ConfigManager::USE_RUNE_REQUIREMENTS) && !begin)
@@ -939,39 +893,38 @@ std::string Item::getDescription(const ItemType& it, int32_t lookDistance, const
 		}
 		else if(it.weaponType != WEAPON_AMMO && it.weaponType != WEAPON_WAND)
 		{
-			if(it.attack || it.extraAttack || (item && (item->getAttack() || item->getExtraAttack())))
-			{
-				begin = false;
-				s << " (Atk:";
-				if(it.hasAbilities() && it.abilities->elementType != COMBAT_NONE)
-				{
-					s << std::max((int32_t)0, int32_t((item ? item->getAttack() : it.attack) - it.abilities->elementDamage));
-					if(it.extraAttack || (item && item->getExtraAttack()))
-						s << " " << std::showpos << int32_t(item ? item->getExtraAttack() : it.extraAttack) << std::noshowpos;
+			int32_t attack, defense, extraDefense;
+			if (item) {
+				attack = item->getAttack();
+				defense = item->getDefense();
+				extraDefense = item->getExtraDefense();
+			} else {
+				attack = it.attack;
+				defense = it.defense;
+				extraDefense = it.extraDefense;
+			}
 
-					s << " physical + " << it.abilities->elementDamage << " " << getCombatName(it.abilities->elementType);
-				}
-				else
-				{
-					s << int32_t(item ? item->getAttack() : it.attack);
-					if(it.extraAttack || (item && item->getExtraAttack()))
-						s << " " << std::showpos << int32_t(item ? item->getExtraAttack() : it.extraAttack) << std::noshowpos;
+			if (attack != 0) {
+				begin = false;
+				s << " (Atk:" << attack;
+
+				if (it.abilities && it.abilities->elementType != COMBAT_NONE && it.abilities->elementDamage != 0) {
+					s << " physical + " << it.abilities->elementDamage << ' ' << getCombatName(it.abilities->elementType);
 				}
 			}
 
-			if(it.defense || it.extraDefense || (item && (item->getDefense() || item->getExtraDefense())))
-			{
-				if(begin)
-				{
+			if (defense != 0 || extraDefense != 0) {
+				if (begin) {
 					begin = false;
 					s << " (";
-				}
-				else
+				} else {
 					s << ", ";
+				}
 
-				s << "Def:" << int32_t(item ? item->getDefense() : it.defense);
-				if(it.extraDefense || (item && item->getExtraDefense()))
-					s << " " << std::showpos << int32_t(item ? item->getExtraDefense() : it.extraDefense) << std::noshowpos;
+				s << "Def:" << defense;
+				if (extraDefense != 0) {
+					s << ' ' << std::showpos << extraDefense << std::noshowpos;
+				}
 			}
 		}
 		
@@ -984,7 +937,8 @@ std::string Item::getDescription(const ItemType& it, int32_t lookDistance, const
 			}
 			else
 				s << ", ";
-				s << "Crit Chance:" << std::showpos << int32_t(item ? item->getCriticalHitChance() : it.criticalHitChance) << "%"<< std::noshowpos;
+
+			s << "Crit Chance:" << std::showpos << int32_t(item ? item->getCriticalHitChance() : it.criticalHitChance) << "%"<< std::noshowpos;
 		}
 
 		if(it.attackSpeed || (item && item->getAttackSpeed()))
@@ -1028,7 +982,7 @@ std::string Item::getDescription(const ItemType& it, int32_t lookDistance, const
 				else
 					s << ", ";
 
-				s << "ninjutsu " << std::showpos << (int32_t)it.abilities->stats[STAT_MAGICLEVEL] << std::noshowpos;
+				s << "magic level " << std::showpos << (int32_t)it.abilities->stats[STAT_MAGICLEVEL] << std::noshowpos;
 			}
 
 			int32_t show = it.abilities->absorb[COMBAT_ALL];
@@ -1281,7 +1235,7 @@ std::string Item::getDescription(const ItemType& it, int32_t lookDistance, const
 			s << " (Arm:" << tmp;
 			begin = false;
 		}
-		
+
 		if(it.criticalHitChance || (item && item->getCriticalHitChance()))
 		{
 			if(begin)
@@ -1291,7 +1245,8 @@ std::string Item::getDescription(const ItemType& it, int32_t lookDistance, const
 			}
 			else
 				s << ", ";
-				s << "Crit Chance:" << std::showpos << int32_t(item ? item->getCriticalHitChance() : it.criticalHitChance) << "%"<< std::noshowpos;
+
+			s << "Crit Chance:" << std::showpos << int32_t(item ? item->getCriticalHitChance() : it.criticalHitChance) << "%"<< std::noshowpos;
 		}
 
 		if(it.hasAbilities())
@@ -1322,7 +1277,7 @@ std::string Item::getDescription(const ItemType& it, int32_t lookDistance, const
 				else
 					s << ", ";
 
-				s << "ninjutsu " << std::showpos << (int32_t)it.abilities->stats[STAT_MAGICLEVEL] << std::noshowpos;
+				s << "magic level " << std::showpos << (int32_t)it.abilities->stats[STAT_MAGICLEVEL] << std::noshowpos;
 			}
 
 			int32_t show = it.abilities->absorb[COMBAT_ALL];
@@ -1570,7 +1525,7 @@ std::string Item::getDescription(const ItemType& it, int32_t lookDistance, const
 	if(it.showDuration)
 	{
 		int32_t duration = item ? item->getDuration() / 1000 : 0;
-		if(duration != 0)
+		if (duration != 0)
 		{
 			s << " that will expire in ";
 			if(duration >= 86400)
@@ -1612,7 +1567,6 @@ std::string Item::getDescription(const ItemType& it, int32_t lookDistance, const
 		s << std::endl << "It can only be wielded properly by ";
 		if(it.wieldInfo & WIELDINFO_PREMIUM)
 			s << "premium ";
-		
 
 		if(it.wieldInfo & WIELDINFO_VOCREQ)
 			s << it.vocationString;
@@ -1629,12 +1583,10 @@ std::string Item::getDescription(const ItemType& it, int32_t lookDistance, const
 			else
 				s << " of";
 
-			s << " ninjutsu " << (int32_t)it.minReqMagicLevel << " or higher";
+			s << " magic level " << (int32_t)it.minReqMagicLevel << " or higher";
 		}
 
 		s << ".";
-		if(it.wieldInfo & WIELDINFO_UNIQUEITEM)
-			s << "This item can only be equipped by the owner.";
 	}
 
 	if(lookDistance <= 1 && it.pickupable)
@@ -1676,7 +1628,7 @@ std::string Item::getDescription(const ItemType& it, int32_t lookDistance, const
 		time_t now = time(NULL);
 		tm* ts = localtime(&now);
 
-		std::stringstream ss;
+		std::ostringstream ss;
 		ss << ts->tm_sec;
 		replaceString(str, "|SECONDS|", ss.str());
 
@@ -1724,7 +1676,7 @@ std::string Item::getNameDescription(const ItemType& it, const Item* item/* = NU
 	if(item)
 		subType = item->getSubType();
 
-	std::stringstream s;
+	std::ostringstream s;
 	if(it.loaded || (item && !item->getName().empty()))
 	{
 		if(subType > 1 && it.stackable && it.showCount)
@@ -1737,6 +1689,15 @@ std::string Item::getNameDescription(const ItemType& it, const Item* item/* = NU
 					s << item->getArticle() << " ";
 				else if(!it.article.empty())
 					s << it.article << " ";
+			}
+
+			if (item && item->magicAttributes.size() > 0)
+			{
+				bool hasMagicName;
+				std::string magicName = item->getStringAttribute("magicName", hasMagicName); 
+
+				if (hasMagicName)
+					s << magicName << " ";
 			}
 
 			s << (item ? item->getName() : it.name);
@@ -1755,7 +1716,7 @@ std::string Item::getWeightDescription(double weight, bool stackable, uint32_t c
 	if(weight <= 0)
 		return "";
 
-	std::stringstream s;
+	std::ostringstream s;
 	if(stackable && count > 1)
 		s << "They weigh " << std::fixed << std::setprecision(2) << weight << " oz.";
 	else
@@ -1803,16 +1764,18 @@ void Item::setUniqueId(int32_t uid)
 
 bool Item::canDecay()
 {
-	if(isRemoved())
+	if (isRemoved()) {
 		return false;
+	}
 
 	const ItemType& it = Item::items[id];
 	if (it.decayTo < 0 || it.decayTime == 0) {
 		return false;
 	}
 
-	if(loadedFromMap && (getUniqueId() || (getActionId() && getContainer())))
+	if (itemUid != -1) {
 		return false;
+	}
 
 	return true;
 }
@@ -1828,3 +1791,37 @@ void Item::__startDecaying()
 {
 	g_game.startDecay(this);
 }
+
+void Item::generateSerial()
+{
+	std::string letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+	std::string serial = "";
+	for(int32_t i = 1; i < 6; i++)
+	{
+		int32_t l = rand() % (letters.length() - 1) + 1;
+		serial += letters.substr(l, 1);
+	}
+	serial += "-";
+	for(int32_t i = 1; i < 6; i++)
+	{
+		int32_t l = rand() % (letters.length() - 1) + 1;
+		serial += letters.substr(l, 1);
+	}
+	serial += "-";
+	for(int32_t i = 1; i < 6; i++)
+	{
+		int32_t l = rand() % (letters.length() - 1) + 1;
+		serial += letters.substr(l, 1);
+	}
+	serial += "-";
+	for(int32_t i = 1; i < 6; i++)
+	{
+		int32_t l = rand() % (letters.length() - 1) + 1;
+		serial += letters.substr(l, 1);
+	}
+
+	std::string key = "serial";
+	this->setAttribute(key.c_str(), serial);
+	serial = "";
+}
+

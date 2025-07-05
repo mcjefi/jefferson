@@ -362,4 +362,3 @@ class PropWriteStream
 		uint32_t bufferSize, size;
 };
 #endif
-

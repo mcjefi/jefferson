@@ -70,16 +70,6 @@ class Vocation
 
 		int32_t getGainCap() const {return capGain;}
 		void setGainCap(int32_t v) {capGain = v;}
-		
-		// Wonsr
-		int32_t getCorpseId() const {return corpseID;}
-		void setCorpseId(int32_t v) {corpseID = v;}
-		
-		bool canSeeLimbo() const {return seelimbo;}
-		void setCanSeeLimbo(bool v) {seelimbo = v;}
-		
-		uint32_t getRateSpeed() const {return rateSpeed;}
-		void setRateSpeed(uint32_t v) {rateSpeed = v;}
 
 		uint32_t getGain(gain_t type) const {return gain[type];}
 		void setGain(gain_t type, uint32_t v) {gain[type] = v;}
@@ -111,14 +101,15 @@ class Vocation
 		cacheMap cacheSkill[SKILL_LAST + 1];
 		cacheMap cacheMana;
 
-		bool attackable, needPremium, dropLoot, skillLoss, seelimbo;
+		bool attackable, needPremium, dropLoot, skillLoss;
 		uint16_t clientId;
 		int32_t lessLoss, capGain;
-		uint32_t id, fromVocation, baseSpeed, attackSpeed, corpseID;
+		uint32_t id, fromVocation, baseSpeed, attackSpeed;
 		std::string name, description;
+
 		int16_t absorb[COMBAT_LAST + 1], reflect[REFLECT_LAST + 1][COMBAT_LAST + 1];
 		uint32_t gain[GAIN_LAST + 1], gainTicks[GAIN_LAST + 1], gainAmount[GAIN_LAST + 1], skillBase[SKILL_LAST + 1];
-		float skillMultipliers[SKILL__LAST + 1], formulaMultipliers[MULTIPLIER_LAST + 1], rateSpeed;
+		float skillMultipliers[SKILL__LAST + 1], formulaMultipliers[MULTIPLIER_LAST + 1];
 };
 
 typedef std::map<uint32_t, Vocation*> VocationsMap;

@@ -190,7 +190,7 @@ class Game
 		}
 
 		void setWorldType(WorldType_t type) {worldType = type;}
-		WorldType_t getWorldType() const {return worldType;}
+		WorldType_t getWorldType(const Player* player, const Player* target = NULL) const;
 
 		Cylinder* internalGetCylinder(Player* player, const Position& pos);
 		Thing* internalGetThing(Player* player, const Position& pos, int32_t index,
@@ -351,18 +351,23 @@ class Game
 		uint32_t getCreaturesOnline() {return (uint32_t)autoList.size();}
 		uint32_t getPlayersWithMcLimit();
 
+		uint32_t getUniquePlayersOnline();
+
 		uint32_t getPlayersRecord() const {return playersRecord;}
 		void getWorldLightInfo(LightInfo& lightInfo);
 
 		void getSpectators(SpectatorVec& list, const Position& centerPos, bool multifloor = false, bool onlyPlayers = false,
 			int32_t minRangeX = 0, int32_t maxRangeX = 0,
 			int32_t minRangeY = 0, int32_t maxRangeY = 0)
-			{map->getSpectators(list, centerPos, multifloor, onlyPlayers, minRangeX, maxRangeX, minRangeY, maxRangeY);}
+		{
+			map->getSpectators(list, centerPos, multifloor, onlyPlayers, minRangeX, maxRangeX, minRangeY, maxRangeY);
+		}
 		SpectatorVec getSpectators(const Position& centerPos) {
 			SpectatorVec list;
 			map->getSpectators(list, centerPos, true, false);
 			return list;
 		}
+
 		void clearSpectatorCache() {if(map) map->clearSpectatorCache();}
 
 		ReturnValue internalMoveCreature(Creature* creature, Direction direction, uint32_t flags = 0);
@@ -370,7 +375,9 @@ class Game
 			Cylinder* toCylinder, uint32_t flags = 0, bool forceTeleport = false);
 
 		ReturnValue internalMoveItem(Creature* actor, Cylinder* fromCylinder, Cylinder* toCylinder, int32_t index,
-			Item* item, uint32_t count, Item** _moveItem, uint32_t flags = 0);
+			Item* item, uint32_t count, Item** _moveItem, uint32_t flags = 0, Item* tradeItem = NULL);
+		ReturnValue internalMoveTradeItem(Creature* actor, Cylinder* fromCylinder, Cylinder* toCylinder, int32_t index,
+			Item* item, Item* tradeItem, uint32_t count, Item** _moveItem, uint32_t flags = 0);
 
 		ReturnValue internalAddItem(Creature* actor, Cylinder* toCylinder, Item* item, int32_t index = INDEX_WHEREEVER,
 			uint32_t flags = 0, bool test = false);
@@ -421,17 +428,19 @@ class Game
 		  * \param cylinder to remove the money from
 		  * \param money is the amount to remove
 		  * \param flags optional flags to modifiy the default behaviour
+		  * \param canDrop optional canDrop to modify default behavior
 		  * \returns true if the removal was successful
 		  */
-		bool removeMoney(Cylinder* cylinder, int64_t money, uint32_t flags = 0);
+		bool removeMoney(Cylinder* cylinder, int64_t money, uint32_t flags = 0, bool canDrop = true);
 
 		/**
 		  * Add item(s) with monetary value
 		  * \param cylinder which will receive money
 		  * \param money the amount to give
 		  * \param flags optional flags to modify default behavior
+		  * \param canDrop optional canDrop to modify default behavior
 		  */
-		void addMoney(Cylinder* cylinder, int64_t money, uint32_t flags = 0);
+		bool addMoney(Cylinder* cylinder, int64_t money, uint32_t flags = 0, bool canDrop = true);
 
 		/**
 		  * Transform one item to another type/count
@@ -468,10 +477,6 @@ class Game
 		  * \param pos Appear as sent from different position
 		  */
 		bool internalCreatureSay(Creature* creature, MessageClasses type, const std::string& text,
-			bool ghostMode, SpectatorVec* spectators = NULL, Position* pos = NULL, uint32_t statementId = 0);
-
-
-		bool internalCreatureSayBlocked(Creature* creature, MessageClasses type, const std::string& text,
 			bool ghostMode, SpectatorVec* spectators = NULL, Position* pos = NULL, uint32_t statementId = 0);
 
 		bool internalStartTrade(Player* player, Player* partner, Item* tradeItem);
@@ -521,8 +526,8 @@ class Game
 		bool playerUpdateHouseWindow(uint32_t playerId, uint8_t listId, uint32_t windowTextId, const std::string& text);
 		bool playerRequestTrade(uint32_t playerId, const Position& pos, int16_t stackpos,
 			uint32_t tradePlayerId, uint16_t spriteId);
-		bool playerAcceptTrade(uint32_t playerId);
-		bool playerLookInTrade(uint32_t playerId, bool lookAtCounterOffer, int index);
+		void playerAcceptTrade(uint32_t playerId);
+		bool playerLookInTrade(uint32_t playerId, bool lookAtCounterOffer, int32_t index);
 		bool playerPurchaseItem(uint32_t playerId, uint16_t spriteId, uint8_t count, uint8_t amount,
 			bool ignoreCap = false, bool inBackpacks = false);
 		bool playerSellItem(uint32_t playerId, uint16_t spriteId, uint8_t count, uint8_t amount,
@@ -601,7 +606,6 @@ class Game
 		void setGameState(GameState_t newState);
 
 		void saveGameState(uint8_t flags);
-		void saveGameState();
 		void loadGameState();
 
 		void cleanMapEx(uint32_t& count);
@@ -624,11 +628,10 @@ class Game
 		bool combatBlockHit(CombatType_t combatType, Creature* attacker, Creature* target,
 			int32_t& healthChange, bool checkDefense, bool checkArmor, bool field = false, bool element = false);
 
-		bool combatChangeHealth(CombatType_t combatType, Creature* attacker, Creature* target, int32_t healthChange,
-			MagicEffect_t hitEffect = MAGIC_EFFECT_UNKNOWN, Color_t hitColor = COLOR_UNKNOWN, bool force = false);
-		bool combatChangeHealth(const CombatParams& params, Creature* attacker, Creature* target, int32_t healthChange, bool force);
+		bool combatChangeHealth(CombatParams& params, Creature* attacker, Creature* target, int32_t healthChange, bool force = false);
 		bool combatChangeMana(Creature* attacker, Creature* target, int32_t manaChange,
-			CombatType_t combatType = COMBAT_MANADRAIN, bool inherited = false);
+			CombatType_t combatType = COMBAT_MANADRAIN, bool inherited = false,
+			Origin_t origin = ORIGIN_NONE);
 
 		//animation help functions
 		void addCreatureHealth(const Creature* target);
@@ -659,6 +662,9 @@ class Game
 
 		Map* getMap() {return map;}
 		const Map* getMap() const {return map;}
+		
+		uint32_t getGuildGGNWin() const { return guidGGNWin; }
+		void updateGuildGGNWin();
 
 		bool isRunning() const {return services && services->is_running();}
 		int32_t getLightHour() const {return lightHour;}
@@ -673,13 +679,6 @@ class Game
 		bool playerYell(Player* player, const std::string& text, uint32_t statementId);
 		bool playerSpeakTo(Player* player, MessageClasses type, const std::string& receiver, const std::string& text, uint32_t statementId);
 		bool playerSpeakToChannel(Player* player, MessageClasses type, const std::string& text, uint16_t channelId, uint32_t statementId);
-		
-		bool playerWhisperBlocked(Player* player, const std::string& text, uint32_t statementId);
-		bool playerYellBlocked(Player* player, const std::string& text, uint32_t statementId);
-		bool playerSpeakToBlocked(Player* player, MessageClasses type, const std::string& receiver, const std::string& text, uint32_t statementId);
-		bool playerSpeakToChannelBlocked(Player* player, MessageClasses type, const std::string& text, uint16_t channelId, uint32_t statementId);
-		
-		
 		bool playerSpeakToNpc(Player* player, const std::string& text);
 		bool playerReportRuleViolation(Player* player, const std::string& text);
 		bool playerContinueReport(Player* player, const std::string& text);
@@ -726,7 +725,9 @@ class Game
 		uint32_t playersRecord;
 		uint32_t checkLightEvent, checkCreatureEvent, checkDecayEvent, saveEvent;
 		uint32_t checkWarsEvent;
+		uint32_t guidGGNWin;
 		bool checkEndingWars;
+		
 
 		RefreshTiles refreshTiles;
 		Trash trash;

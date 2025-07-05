@@ -31,15 +31,17 @@
 
 #include "configmanager.h"
 #include "game.h"
+#include "chat.h"
 
 extern Game g_game;
+extern Chat g_chat;
 extern Spells* g_spells;
 extern Monsters g_monsters;
 extern ConfigManager g_config;
 
 void MonsterType::reset()
 {
-	canPushItems = canPushCreatures = isSummonable = isIllusionable = isConvinceable = isLureable = isWalkable = hideName = hideHealth = eliminable  = playerblockspawn = canWalkEverywhere = isPuppet = isBoss = isLimbo = false;
+	canPushItems = canPushCreatures = isSummonable = isIllusionable = isConvinceable = isLureable = isWalkable = hideName = hideHealth = eliminable = isPassive = false;
 	pushable = isAttackable = isHostile = true;
 
 	outfit.lookHead = outfit.lookBody = outfit.lookLegs = outfit.lookFeet = outfit.lookType = outfit.lookTypeEx = outfit.lookAddons = 0;
@@ -57,10 +59,6 @@ void MonsterType::reset()
 	partyShield = SHIELD_NONE;
 	guildEmblem = GUILDEMBLEM_NONE;
 	lootMessage = LOOTMSG_IGNORE;
-	
-	// Wonsr
-	canWalkEverywhere = false; 
-	saga = missao = 0; // Saga System
 
 	for(SpellList::iterator it = spellAttackList.begin(); it != spellAttackList.end(); ++it)
 	{
@@ -90,21 +88,11 @@ void MonsterType::reset()
 	elementMap.clear();
 }
 
-uint16_t MonsterType::getLootRare(uint16_t item_id, Player* owner)
-{	
-if (g_config.getBool(ConfigManager::RARE_SYTEM_ENABLE) && Item::items[item_id].rareSystemR > 0){
-	int r = random_range(1, 100000) * (g_config.getDouble(ConfigManager::RATE_LOOT_RARE)+owner->getExtraRareLootRate());
-	uint16_t num = ((r < 95000) ? item_id :(r < 98500) ? Item::items[item_id].rareSystemR : (r < 99500) ? Item::items[item_id].rareSystemE : Item::items[item_id].rareSystemL);
-	return num;
-}
-	return item_id;
-}
-
-ItemList MonsterType::createLoot(const LootBlock& lootBlock, Player* owner)
+ItemList MonsterType::createLoot(const LootBlock& lootBlock)
 {
-	uint16_t item = lootBlock.ids[0], random = Monsters::getLootRandom(owner), count = 0;
+	uint16_t item = lootBlock.ids[0], random = Monsters::getLootRandom(), count = 0;
 	if(lootBlock.ids.size() > 1)
-		item = getLootRare(lootBlock.ids[random_range((size_t)0, lootBlock.ids.size() - 1)], owner);
+		item = lootBlock.ids[random_range((size_t)0, lootBlock.ids.size() - 1)];
 
 	ItemList items;
 	if(random < lootBlock.chance)
@@ -132,7 +120,7 @@ ItemList MonsterType::createLoot(const LootBlock& lootBlock, Player* owner)
 
 		if(!lootBlock.text.empty())
 			tmpItem->setText(lootBlock.text);
-
+		
 		items.push_back(tmpItem);
 	}
 
@@ -148,7 +136,7 @@ bool MonsterType::createChildLoot(Container* parent, const LootBlock& lootBlock,
 	ItemList items;
 	for(; it != lootBlock.childLoot.end() && !parent->full(); ++it)
 	{
-		items = createLoot(*it, player);
+		items = createLoot(*it);
 		if(items.empty())
 			continue;
 
@@ -183,23 +171,21 @@ bool MonsterType::createChildLoot(Container* parent, const LootBlock& lootBlock,
 	return !parent->empty();
 }
 
-uint16_t Monsters::getLootRandom(Player* owner)
+uint16_t Monsters::getLootRandom()
 {
-	double extraChance = (owner ? owner->getExtraLootChance() : 0);
-	return (uint16_t)std::ceil((double)random_range(0, MAX_LOOTCHANCE) / (g_config.getDouble(ConfigManager::RATE_LOOT) + extraChance));
+	return (uint16_t)std::ceil((double)random_range(0, MAX_LOOTCHANCE) / g_config.getDouble(ConfigManager::RATE_LOOT));
 }
 
-void MonsterType::dropLoot(Container* corpse)
-{	
-	uint32_t ownerId = corpse->getCorpseOwner();
-	Player* owner = g_game.getPlayerByGuid(ownerId);
-	
-	uint32_t money = 0;
+bool MonsterType::createChildLootOld(Container* parent, const LootBlock& lootBlock)
+{
+	LootItems::const_iterator it = lootBlock.childLoot.begin();
+	if(it == lootBlock.childLoot.end())
+		return true;
+
 	ItemList items;
-	std::stringstream str;
-	for(LootItems::const_iterator it = lootItems.begin(); it != lootItems.end() && !corpse->full(); ++it)
+	for(; it != lootBlock.childLoot.end() && !parent->full(); ++it)
 	{
-		items = createLoot(*it, owner);
+		items = createLoot(*it);
 		if(items.empty())
 			continue;
 
@@ -208,22 +194,115 @@ void MonsterType::dropLoot(Container* corpse)
 			Item* tmpItem = *iit;
 			if(Container* container = tmpItem->getContainer())
 			{
-				if(createChildLoot(container, (*it), money, str, owner)) {
-					corpse->__internalAddThing(tmpItem);
-				} else {
+				if(createChildLootOld(container, *it))
+					parent->__internalAddThing(tmpItem);
+				else
 					delete container;
-				}
 			}
-			else {
+			else
+				parent->__internalAddThing(tmpItem);
+		}
+	}
+
+	return !parent->empty();
+}
+
+void MonsterType::dropLootOld(Container* corpse)
+{
+	ItemList items;
+	for(LootItems::const_iterator it = lootItems.begin(); it != lootItems.end() && !corpse->full(); ++it)
+	{
+		items = createLoot(*it);
+		if(items.empty())
+			continue;
+
+		for(ItemList::iterator iit = items.begin(); iit != items.end(); ++iit)
+		{
+			Item* tmpItem = *iit;
+			if(Container* container = tmpItem->getContainer())
+			{
+				if(createChildLootOld(container, *it))
+					corpse->__internalAddThing(tmpItem);
+				else
+					delete container;
+			}
+			else
+				corpse->__internalAddThing(tmpItem);
+		}
+	}
+
+	corpse->__startDecaying();
+	uint32_t ownerId = corpse->getCorpseOwner();
+	if(!ownerId)
+		return;
+
+	Player* owner = g_game.getPlayerByGuid(ownerId);
+	if(!owner)
+		return;
+
+	LootMessage_t message = lootMessage;
+	if(message == LOOTMSG_IGNORE)
+		message = (LootMessage_t)g_config.getNumber(ConfigManager::LOOT_MESSAGE);
+
+	if(message < LOOTMSG_PLAYER)
+		return;
+
+	std::stringstream ss;
+	ss << "Loot of " << nameDescription << ": " << corpse->getContentDescription() << ".";
+	if(owner->getParty() && message > LOOTMSG_PLAYER)
+		owner->getParty()->broadcastMessage((MessageClasses)g_config.getNumber(ConfigManager::LOOT_MESSAGE_TYPE), ss.str());
+	else if(message == LOOTMSG_PLAYER || message == LOOTMSG_BOTH)
+	{
+		if (!owner->getLoot())
+			owner->sendTextMessage((MessageClasses)g_config.getNumber(ConfigManager::LOOT_MESSAGE_TYPE), ss.str());
+		else
+			owner->sendChannelMessage("", ss.str(), MSG_CHANNEL_MANAGEMENT, g_config.getNumber(ConfigManager::LOOT_CHANNEL));
+	}
+}
+
+void MonsterType::dropLoot(Container* corpse)
+{
+	if(!g_config.getBool(ConfigManager::AUTOLOOT_ENABLE_SYSTEM))
+	{
+		dropLootOld(corpse);
+		return;
+	}
+
+	uint32_t money = 0;
+	ItemList items;
+	std::stringstream str;
+	for(LootItems::const_iterator it = lootItems.begin(); it != lootItems.end() && !corpse->full(); ++it)
+	{
+		items = createLoot(*it);
+		if(items.empty())
+			continue;
+
+		for(ItemList::iterator iit = items.begin(); iit != items.end(); ++iit)
+		{
+			Item* tmpItem = *iit;
+			if(Container* container = tmpItem->getContainer())
+			{
+				Player* tmpPlayer = g_game.getPlayerByGuid(corpse->getCorpseOwner());
+				if(createChildLoot(container, (*it), money, str, tmpPlayer))
+					corpse->__internalAddThing(tmpItem);
+				else
+					delete container;
+			}
+			else
+			{
 				bool LootCatch = false;
-				if(owner) {
-					if(owner->statusAutoLoot() == "On") {
-						LootCatch = owner->checkAutoLoot(tmpItem->getID());
-						if(LootCatch) {
-							if(owner->isMoneyAutoLoot(tmpItem, money)) {
+				Player* tmpPlayer = g_game.getPlayerByGuid(corpse->getCorpseOwner());
+				if(tmpPlayer)
+				{
+					if(tmpPlayer->statusAutoLoot() == "On")
+					{
+						LootCatch = tmpPlayer->checkAutoLoot(tmpItem->getID());
+						if(LootCatch)
+						{
+							if(tmpPlayer->isMoneyAutoLoot(tmpItem, money))
 								continue;
-							}
-							g_game.internalPlayerAddItem(NULL, owner, tmpItem);
+
+							g_game.internalPlayerAddItem(NULL, tmpPlayer, tmpItem, false);
 							str << " " << tmpItem->getNameDescription() << ",";
 							continue;
 						}
@@ -235,23 +314,25 @@ void MonsterType::dropLoot(Container* corpse)
 	}
 
 	corpse->__startDecaying();
-	
+	uint32_t ownerId = corpse->getCorpseOwner();
 	if(!ownerId)
 		return;
 
+	Player* owner = g_game.getPlayerByGuid(ownerId);
 	if(!owner)
 		return;
 
-	if(money != 0) {
-		if(owner->statusAutoMoneyCollect() == "Bank"){
+	if(money != 0)
+	{
+		if(owner->statusAutoMoneyCollect() == "Bank")
 			owner->balance += money;
-		} else {
+		else
 			g_game.addMoney(owner, money);
-		}
-		str << " " << money << "x coins.";
-	} else {
-		str << " nothing coins.";
+
+		str << " " << money << "x gold coins.";
 	}
+	else
+		str << " nothing gold coins.";
 
 	LootMessage_t message = lootMessage;
 	if(message == LOOTMSG_IGNORE)
@@ -262,22 +343,20 @@ void MonsterType::dropLoot(Container* corpse)
 
 	std::stringstream ss;
 	ss << "Loot of " << nameDescription << ": " << corpse->getContentDescription() << ".";
-	if(owner->statusAutoLoot()  == "On") {
+
+	if(owner->statusAutoLoot()  == "On")
 		ss << "\nAutoLoot Colleted:" << str.str();
-	}
+
 	if(owner->getParty() && message > LOOTMSG_PLAYER)
 		owner->getParty()->broadcastMessage((MessageClasses)g_config.getNumber(ConfigManager::LOOT_MESSAGE_TYPE), ss.str());
-	else if (message == LOOTMSG_PLAYER || message == LOOTMSG_BOTH)
+	else if(message == LOOTMSG_PLAYER || message == LOOTMSG_BOTH)
 	{
-		std::string value = "-1";
-		owner->getStorage("lootch", value);
-		if (value == "-1")
+		if (!owner->getLoot())
 			owner->sendTextMessage((MessageClasses)g_config.getNumber(ConfigManager::LOOT_MESSAGE_TYPE), ss.str());
 		else
-			owner->sendChannelMessage("", ss.str(), MSG_CHANNEL_MANAGEMENT, CHANNEL_LOOT);
+			owner->sendChannelMessage("", ss.str(), MSG_CHANNEL_MANAGEMENT, g_config.getNumber(ConfigManager::LOOT_CHANNEL));
 	}
 }
-
 bool Monsters::loadFromXml(bool reloading /*= false*/)
 {
 	loaded = false;
@@ -465,101 +544,6 @@ bool Monsters::deserializeSpell(xmlNodePtr node, spellBlock_t& sb, const std::st
 				conditionType = CONDITION_BLEEDING;
 				tickInterval = 5000;
 			}
-			else if(readXMLInteger(node, "suiton", intValue))
-			{
-				conditionType = CONDITION_SUITON;
-				tickInterval = 5000;
-			}
-			else if(readXMLInteger(node, "fuuton", intValue))
-			{
-				conditionType = CONDITION_FUUTON;
-				tickInterval = 5000;
-			}
-			else if(readXMLInteger(node, "doton", intValue))
-			{
-				conditionType = CONDITION_DOTON;
-				tickInterval = 5000;
-			}
-			else if(readXMLInteger(node, "raiton", intValue))
-			{
-				conditionType = CONDITION_RAITON;
-				tickInterval = 5000;
-			}
-			else if(readXMLInteger(node, "mokuton", intValue))
-			{
-				conditionType = CONDITION_MOKUTON;
-				tickInterval = 5000;
-			}
-			else if(readXMLInteger(node, "shoton", intValue))
-			{
-				conditionType = CONDITION_SHOTON;
-				tickInterval = 5000;
-			}
-			else if(readXMLInteger(node, "suna", intValue))
-			{
-				conditionType = CONDITION_SUNA;
-				tickInterval = 5000;
-			}
-			else if(readXMLInteger(node, "enton", intValue))
-			{
-				conditionType = CONDITION_ENTON;
-				tickInterval = 5000;
-			}
-			else if(readXMLInteger(node, "hyoton", intValue))
-			{
-				conditionType = CONDITION_HYOTON;
-				tickInterval = 5000;
-			}
-			else if(readXMLInteger(node, "yoton", intValue))
-			{
-				conditionType = CONDITION_YOTON;
-				tickInterval = 5000;
-			}
-			else if(readXMLInteger(node, "ranton", intValue))
-			{
-				conditionType = CONDITION_RANTON;
-				tickInterval = 5000;
-			}
-			else if(readXMLInteger(node, "bakuton", intValue))
-			{
-				conditionType = CONDITION_BAKUTON;
-				tickInterval = 5000;
-			}
-			else if(readXMLInteger(node, "shakuton", intValue))
-			{
-				conditionType = CONDITION_SHAKUTON;
-				tickInterval = 5000;
-			}
-			else if(readXMLInteger(node, "futton", intValue))
-			{
-				conditionType = CONDITION_FUTTON;
-				tickInterval = 5000;
-			}
-			else if(readXMLInteger(node, "jinton", intValue))
-			{
-				conditionType = CONDITION_JINTON;
-				tickInterval = 5000;
-			}
-			else if(readXMLInteger(node, "satetsu", intValue))
-			{
-				conditionType = CONDITION_SATETSU;
-				tickInterval = 5000;
-			}
-			else if(readXMLInteger(node, "taijutsu", intValue))
-			{
-				conditionType = CONDITION_TAIJUTSU;
-				tickInterval = 5000;
-			}
-			else if(readXMLInteger(node, "yin", intValue))
-			{
-				conditionType = CONDITION_YIN;
-				tickInterval = 5000;
-			}
-			else if(readXMLInteger(node, "kenjutsu", intValue))
-			{
-				conditionType = CONDITION_KENJUTSU;
-				tickInterval = 5000;
-			}
 			else if(readXMLInteger(node, "fire", intValue))
 			{
 				conditionType = CONDITION_FIRE;
@@ -619,46 +603,6 @@ bool Monsters::deserializeSpell(xmlNodePtr node, spellBlock_t& sb, const std::st
 			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_PHYSICALDAMAGE);
 			combat->setParam(COMBATPARAM_BLOCKEDBYARMOR, 1);
 		}
-		else if(tmpName == "suiton")
-			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_SUITONDAMAGE);
-		else if(tmpName == "fuuton")
-			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_FUUTONDAMAGE);
-		else if(tmpName == "doton")
-			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_DOTONDAMAGE);
-		else if(tmpName == "raiton")
-			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_RAITONDAMAGE);
-		else if(tmpName == "mokuton")
-			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_MOKUTONDAMAGE);
-		else if(tmpName == "shoton")
-			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_SHOTONDAMAGE);
-		else if(tmpName == "suna")
-			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_SUNADAMAGE);
-		else if(tmpName == "enton")
-			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_ENTONDAMAGE);
-		else if(tmpName == "hyoton")
-			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_HYOTONDAMAGE);
-		else if(tmpName == "yoton")
-			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_YOTONDAMAGE);
-		else if(tmpName == "ranton")
-			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_RANTONDAMAGE);
-		else if(tmpName == "bakuton")
-			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_BAKUTONDAMAGE);
-		else if(tmpName == "shakuton")
-			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_SHAKUTONDAMAGE);
-		else if(tmpName == "futton")
-			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_FUTTONDAMAGE);
-		else if(tmpName == "jinton")
-			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_JINTONDAMAGE);
-		else if(tmpName == "satetsu")
-			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_SATETSUDAMAGE);
-		else if(tmpName == "taijutsu")
-			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_TAIJUTSUDAMAGE);
-		else if(tmpName == "yin")
-			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_YINDAMAGE);
-		else if(tmpName == "yang")
-			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_YANGDAMAGE);
-		else if(tmpName == "kenjutsu")
-			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_KENJUTSUDAMAGE);
 		else if(tmpName == "bleed")
 			combat->setParam(COMBATPARAM_COMBATTYPE, COMBAT_PHYSICALDAMAGE);
 		else if(tmpName == "drown")
@@ -981,124 +925,13 @@ bool Monsters::deserializeSpell(xmlNodePtr node, spellBlock_t& sb, const std::st
 			tmpName == "icecondition" || tmpName == "freezecondition" ||
 			tmpName == "deathcondition" || tmpName == "cursecondition" ||
 			tmpName == "holycondition" || tmpName == "dazzlecondition" ||
-			tmpName == "drowncondition" || tmpName == "suitoncondition" ||
-			tmpName == "fuutoncondition" || tmpName == "raitoncondition" ||
-			tmpName == "dotoncondition" || tmpName == "mokutoncondition" ||
-			tmpName == "shotoncondition" || tmpName == "sunacondition" ||
-			tmpName == "entoncondition" || tmpName == "hyotoncondition" ||
-			tmpName == "yotoncondition" || tmpName == "rantoncondition" ||
-			tmpName == "bakutoncondition" || tmpName == "shakutoncondition" ||
-			tmpName == "futtoncondition" || tmpName == "jintoncondition" ||
-			tmpName == "satetsucondition" || tmpName == "taijutsucondition"|| 
-			tmpName == "yincondition"|| tmpName == "yangcondition" || 
-			tmpName == "invulnerablecondition" || tmpName == "battlelockcondition" || 
-			tmpName == "kenjutsucondition" )
+			tmpName == "drowncondition")
 		{
 			ConditionType_t conditionType = CONDITION_NONE;
 			uint32_t tickInterval = 2000;
 			if(tmpName == "physicalcondition" || tmpName == "bleedcondition")
 			{
 				conditionType = CONDITION_BLEEDING;
-				tickInterval = 5000;
-			}
-			else if(tmpName == "suitoncondition")
-			{
-				conditionType = CONDITION_SUITON;
-				tickInterval = 5000;
-			}
-			else if(tmpName == "fuutoncondition")
-			{
-				conditionType = CONDITION_FUUTON;
-				tickInterval = 5000;
-			}
-			else if(tmpName == "dotoncondition")
-			{
-				conditionType = CONDITION_DOTON;
-				tickInterval = 5000;
-			}
-			else if(tmpName == "raitoncondition")
-			{
-				conditionType = CONDITION_RAITON;
-				tickInterval = 5000;
-			}
-			else if(tmpName == "mokutoncondition")
-			{
-				conditionType = CONDITION_MOKUTON;
-				tickInterval = 5000;
-			}
-			else if(tmpName == "shotoncondition")
-			{
-				conditionType = CONDITION_SHOTON;
-				tickInterval = 5000;
-			}
-			else if(tmpName == "sunacondition")
-			{
-				conditionType = CONDITION_SUNA;
-				tickInterval = 5000;
-			}
-			else if(tmpName == "entoncondition")
-			{
-				conditionType = CONDITION_ENTON;
-				tickInterval = 5000;
-			}
-			else if(tmpName == "hyotoncondition")
-			{
-				conditionType = CONDITION_HYOTON;
-				tickInterval = 5000;
-			}
-			else if(tmpName == "yotoncondition")
-			{
-				conditionType = CONDITION_YOTON;
-				tickInterval = 5000;
-			}
-			else if(tmpName == "rantoncondition")
-			{
-				conditionType = CONDITION_RANTON;
-				tickInterval = 5000;
-			}
-			else if(tmpName == "bakutoncondition")
-			{
-				conditionType = CONDITION_BAKUTON;
-				tickInterval = 5000;
-			}
-			else if(tmpName == "shakutoncondition")
-			{
-				conditionType = CONDITION_SHAKUTON;
-				tickInterval = 5000;
-			}
-			else if(tmpName == "futtoncondition")
-			{
-				conditionType = CONDITION_FUTTON;
-				tickInterval = 5000;
-			}
-			else if(tmpName == "jintoncondition")
-			{
-				conditionType = CONDITION_JINTON;
-				tickInterval = 5000;
-			}
-			else if(tmpName == "satetsucondition")
-			{
-				conditionType = CONDITION_SATETSU;
-				tickInterval = 5000;
-			}
-			else if(tmpName == "taijutsucondition")
-			{
-				conditionType = CONDITION_TAIJUTSU;
-				tickInterval = 5000;
-			}
-			else if(tmpName == "yincondition")
-			{
-				conditionType = CONDITION_YIN;
-				tickInterval = 5000;
-			}
-			else if(tmpName == "yangcondition")
-			{
-				conditionType = CONDITION_YANG;
-				tickInterval = 5000;
-			}
-			else if(tmpName == "kenjutsucondition")
-			{
-				conditionType = CONDITION_KENJUTSU;
 				tickInterval = 5000;
 			}
 			else if(tmpName == "firecondition")
@@ -1293,12 +1126,6 @@ bool Monsters::loadMonster(const std::string& file, const std::string& monsterNa
 
 	if(readXMLInteger(root, "experience", intValue))
 		mType->experience = intValue;
-	
-	if(readXMLInteger(root, "saga", intValue))
-		mType->saga = intValue;
-	
-	if(readXMLInteger(root, "missao", intValue))
-		mType->missao = intValue;
 
 	if(readXMLInteger(root, "speed", intValue))
 		mType->baseSpeed = intValue;
@@ -1346,21 +1173,6 @@ bool Monsters::loadMonster(const std::string& file, const std::string& monsterNa
 				{
 					if(readXMLString(tmpNode, "summonable", strValue))
 						mType->isSummonable = booleanString(strValue);
-					
-					// Wonsr
-					if(readXMLString(tmpNode, "canwalkeverywhere", strValue)) // PS
-						mType->canWalkEverywhere = booleanString(strValue);
-						
-					if(readXMLString(tmpNode, "limbo", strValue))
-						mType->isLimbo = booleanString(strValue);
-					
-					if(readXMLString(tmpNode, "puppet", strValue))
-						mType->isPuppet = booleanString(strValue);
-					
-					if(readXMLString(tmpNode, "boss", strValue))
-						mType->isBoss = booleanString(strValue);
-					
-					//
 
 					if(readXMLString(tmpNode, "attackable", strValue))
 						mType->isAttackable = booleanString(strValue);
@@ -1368,8 +1180,8 @@ bool Monsters::loadMonster(const std::string& file, const std::string& monsterNa
 					if(readXMLString(tmpNode, "hostile", strValue))
 						mType->isHostile = booleanString(strValue);
 
-					if (readXMLString(tmpNode, "playerblockspawn", strValue))
-						mType->playerblockspawn = booleanString(strValue);
+					if(readXMLString(tmpNode, "passive", strValue))
+						mType->isPassive = booleanString(strValue);
 
 					if(readXMLString(tmpNode, "illusionable", strValue))
 						mType->isIllusionable = booleanString(strValue);
@@ -1549,101 +1361,6 @@ bool Monsters::loadMonster(const std::string& file, const std::string& monsterNa
 							mType->damageImmunities |= COMBAT_PHYSICALDAMAGE;
 							mType->conditionImmunities |= CONDITION_BLEEDING;
 						}
-						else if(tmpStrValue == "suiton")
-						{
-							mType->damageImmunities |= COMBAT_SUITONDAMAGE;
-							mType->conditionImmunities |= CONDITION_SUITON;
-						}
-						else if(tmpStrValue == "fuuton")
-						{
-							mType->damageImmunities |= COMBAT_FUUTONDAMAGE;
-							mType->conditionImmunities |= CONDITION_FUUTON;
-						}
-						else if(tmpStrValue == "doton")
-						{
-							mType->damageImmunities |= COMBAT_DOTONDAMAGE;
-							mType->conditionImmunities |= CONDITION_DOTON;
-						}
-						else if(tmpStrValue == "raiton")
-						{
-							mType->damageImmunities |= COMBAT_RAITONDAMAGE;
-							mType->conditionImmunities |= CONDITION_RAITON;
-						}
-						else if(tmpStrValue == "mokuton")
-						{
-							mType->damageImmunities |= COMBAT_MOKUTONDAMAGE;
-							mType->conditionImmunities |= CONDITION_MOKUTON;
-						}
-						else if(tmpStrValue == "shoton")
-						{
-							mType->damageImmunities |= COMBAT_SHOTONDAMAGE;
-							mType->conditionImmunities |= CONDITION_SHOTON;
-						}
-						else if(tmpStrValue == "suna")
-						{
-							mType->damageImmunities |= COMBAT_SUNADAMAGE;
-							mType->conditionImmunities |= CONDITION_SUNA;
-						}
-						else if(tmpStrValue == "enton")
-						{
-							mType->damageImmunities |= COMBAT_ENTONDAMAGE;
-							mType->conditionImmunities |= CONDITION_ENTON;
-						}
-						else if(tmpStrValue == "hyoton")
-						{
-							mType->damageImmunities |= COMBAT_HYOTONDAMAGE;
-							mType->conditionImmunities |= CONDITION_HYOTON;
-						}
-						else if(tmpStrValue == "yoton")
-						{
-							mType->damageImmunities |= COMBAT_YOTONDAMAGE;
-							mType->conditionImmunities |= CONDITION_YOTON;
-						}
-						else if(tmpStrValue == "ranton")
-						{
-							mType->damageImmunities |= COMBAT_RANTONDAMAGE;
-							mType->conditionImmunities |= CONDITION_RANTON;
-						}
-						else if(tmpStrValue == "bakuton")
-						{
-							mType->damageImmunities |= COMBAT_BAKUTONDAMAGE;
-							mType->conditionImmunities |= CONDITION_BAKUTON;
-						}
-						else if(tmpStrValue == "shakuton")
-						{
-							mType->damageImmunities |= COMBAT_SHAKUTONDAMAGE;
-							mType->conditionImmunities |= CONDITION_SHAKUTON;
-						}
-						else if(tmpStrValue == "futton")
-						{
-							mType->damageImmunities |= COMBAT_FUTTONDAMAGE;
-							mType->conditionImmunities |= CONDITION_FUTTON;
-						}
-						else if(tmpStrValue == "jinton")
-						{
-							mType->damageImmunities |= COMBAT_JINTONDAMAGE;
-							mType->conditionImmunities |= CONDITION_JINTON;
-						}
-						else if(tmpStrValue == "satetsu")
-						{
-							mType->damageImmunities |= COMBAT_SATETSUDAMAGE;
-							mType->conditionImmunities |= CONDITION_SATETSU;
-						}
-						else if(tmpStrValue == "taijutsu")
-						{
-							mType->damageImmunities |= COMBAT_TAIJUTSUDAMAGE;
-							mType->conditionImmunities |= CONDITION_TAIJUTSU;
-						}
-						else if(tmpStrValue == "yin")
-						{
-							mType->damageImmunities |= COMBAT_YINDAMAGE;
-							mType->conditionImmunities |= CONDITION_YIN;
-						}
-						else if(tmpStrValue == "kenjutsu")
-						{
-							mType->damageImmunities |= COMBAT_KENJUTSUDAMAGE;
-							mType->conditionImmunities |= CONDITION_KENJUTSU;
-						}
 						else if(tmpStrValue == "energy")
 						{
 							mType->damageImmunities |= COMBAT_ENERGYDAMAGE;
@@ -1700,106 +1417,6 @@ bool Monsters::loadMonster(const std::string& file, const std::string& monsterNa
 					{
 						mType->damageImmunities |= COMBAT_PHYSICALDAMAGE;
 						mType->conditionImmunities |= CONDITION_BLEEDING;
-					}
-					else if(readXMLString(tmpNode, "suiton", strValue) && booleanString(strValue))
-					{
-						mType->damageImmunities |= COMBAT_SUITONDAMAGE;
-						mType->conditionImmunities |= CONDITION_SUITON;
-					}
-					else if(readXMLString(tmpNode, "fuuton", strValue) && booleanString(strValue))
-					{
-						mType->damageImmunities |= COMBAT_FUUTONDAMAGE;
-						mType->conditionImmunities |= CONDITION_FUUTON;
-					}
-					else if(readXMLString(tmpNode, "doton", strValue) && booleanString(strValue))
-					{
-						mType->damageImmunities |= COMBAT_DOTONDAMAGE;
-						mType->conditionImmunities |= CONDITION_DOTON;
-					}
-					else if(readXMLString(tmpNode, "raiton", strValue) && booleanString(strValue))
-					{
-						mType->damageImmunities |= COMBAT_RAITONDAMAGE;
-						mType->conditionImmunities |= CONDITION_RAITON;
-					}
-					else if(readXMLString(tmpNode, "mokuton", strValue) && booleanString(strValue))
-					{
-						mType->damageImmunities |= COMBAT_MOKUTONDAMAGE;
-						mType->conditionImmunities |= CONDITION_MOKUTON;
-					}
-					else if(readXMLString(tmpNode, "shoton", strValue) && booleanString(strValue))
-					{
-						mType->damageImmunities |= COMBAT_SHOTONDAMAGE;
-						mType->conditionImmunities |= CONDITION_SHOTON;
-					}
-					else if(readXMLString(tmpNode, "suna", strValue) && booleanString(strValue))
-					{
-						mType->damageImmunities |= COMBAT_SUNADAMAGE;
-						mType->conditionImmunities |= CONDITION_SUNA;
-					}
-					else if(readXMLString(tmpNode, "enton", strValue) && booleanString(strValue))
-					{
-						mType->damageImmunities |= COMBAT_ENTONDAMAGE;
-						mType->conditionImmunities |= CONDITION_ENTON;
-					}
-					else if(readXMLString(tmpNode, "hyoton", strValue) && booleanString(strValue))
-					{
-						mType->damageImmunities |= COMBAT_HYOTONDAMAGE;
-						mType->conditionImmunities |= CONDITION_HYOTON;
-					}
-					else if(readXMLString(tmpNode, "yoton", strValue) && booleanString(strValue))
-					{
-						mType->damageImmunities |= COMBAT_YOTONDAMAGE;
-						mType->conditionImmunities |= CONDITION_YOTON;
-					}
-					else if(readXMLString(tmpNode, "ranton", strValue) && booleanString(strValue))
-					{
-						mType->damageImmunities |= COMBAT_RANTONDAMAGE;
-						mType->conditionImmunities |= CONDITION_RANTON;
-					}
-					else if(readXMLString(tmpNode, "bakuton", strValue) && booleanString(strValue))
-					{
-						mType->damageImmunities |= COMBAT_BAKUTONDAMAGE;
-						mType->conditionImmunities |= CONDITION_BAKUTON;
-					}
-					else if(readXMLString(tmpNode, "shakuton", strValue) && booleanString(strValue))
-					{
-						mType->damageImmunities |= COMBAT_SHAKUTONDAMAGE;
-						mType->conditionImmunities |= CONDITION_SHAKUTON;
-					}
-					else if(readXMLString(tmpNode, "futton", strValue) && booleanString(strValue))
-					{
-						mType->damageImmunities |= COMBAT_FUTTONDAMAGE;
-						mType->conditionImmunities |= CONDITION_FUTTON;
-					}
-					else if(readXMLString(tmpNode, "jinton", strValue) && booleanString(strValue))
-					{
-						mType->damageImmunities |= COMBAT_JINTONDAMAGE;
-						mType->conditionImmunities |= CONDITION_JINTON;
-					}
-					else if(readXMLString(tmpNode, "satetsu", strValue) && booleanString(strValue))
-					{
-						mType->damageImmunities |= COMBAT_SATETSUDAMAGE;
-						mType->conditionImmunities |= CONDITION_SATETSU;
-					}
-					else if(readXMLString(tmpNode, "taijutsu", strValue) && booleanString(strValue))
-					{
-						mType->damageImmunities |= COMBAT_TAIJUTSUDAMAGE;
-						mType->conditionImmunities |= CONDITION_TAIJUTSU;
-					}
-					else if(readXMLString(tmpNode, "yin", strValue) && booleanString(strValue))
-					{
-						mType->damageImmunities |= COMBAT_YINDAMAGE;
-						mType->conditionImmunities |= CONDITION_YIN;
-					}
-					else if(readXMLString(tmpNode, "yang", strValue) && booleanString(strValue))
-					{
-						mType->damageImmunities |= COMBAT_YANGDAMAGE;
-						mType->conditionImmunities |= CONDITION_YANG;
-					}
-					else if(readXMLString(tmpNode, "kenjutsu", strValue) && booleanString(strValue))
-					{
-						mType->damageImmunities |= COMBAT_KENJUTSUDAMAGE;
-						mType->conditionImmunities |= CONDITION_KENJUTSU;
 					}
 					else if(readXMLString(tmpNode, "energy", strValue) && booleanString(strValue))
 					{
@@ -1930,46 +1547,6 @@ bool Monsters::loadMonster(const std::string& file, const std::string& monsterNa
 						mType->elementMap[COMBAT_HEALING] = intValue;
 					else if(readXMLInteger(tmpNode, "undefinedPercent", intValue))
 						mType->elementMap[COMBAT_UNDEFINEDDAMAGE] = intValue;
-					else if(readXMLInteger(tmpNode, "suitonPercent", intValue))
-						mType->elementMap[COMBAT_SUITONDAMAGE] = intValue;
-					else if(readXMLInteger(tmpNode, "fuutonPercent", intValue))
-						mType->elementMap[COMBAT_FUUTONDAMAGE] = intValue;
-					else if(readXMLInteger(tmpNode, "dotonPercent", intValue))
-						mType->elementMap[COMBAT_DOTONDAMAGE] = intValue;
-					else if(readXMLInteger(tmpNode, "raitonPercent", intValue))
-						mType->elementMap[COMBAT_RAITONDAMAGE] = intValue;
-					else if(readXMLInteger(tmpNode, "mokutonPercent", intValue))
-						mType->elementMap[COMBAT_MOKUTONDAMAGE] = intValue;
-					else if(readXMLInteger(tmpNode, "shotonPercent", intValue))
-						mType->elementMap[COMBAT_SHOTONDAMAGE] = intValue;
-					else if(readXMLInteger(tmpNode, "sunaPercent", intValue))
-						mType->elementMap[COMBAT_SUNADAMAGE] = intValue;
-					else if(readXMLInteger(tmpNode, "entonPercent", intValue))
-						mType->elementMap[COMBAT_ENTONDAMAGE] = intValue;
-					else if(readXMLInteger(tmpNode, "hyotonPercent", intValue))
-						mType->elementMap[COMBAT_HYOTONDAMAGE] = intValue;
-					else if(readXMLInteger(tmpNode, "yotonPercent", intValue))
-						mType->elementMap[COMBAT_YOTONDAMAGE] = intValue;
-					else if(readXMLInteger(tmpNode, "rantonPercent", intValue))
-						mType->elementMap[COMBAT_RANTONDAMAGE] = intValue;
-					else if(readXMLInteger(tmpNode, "bakutonPercent", intValue))
-						mType->elementMap[COMBAT_BAKUTONDAMAGE] = intValue;
-					else if(readXMLInteger(tmpNode, "shakutonPercent", intValue))
-						mType->elementMap[COMBAT_SHAKUTONDAMAGE] = intValue;
-					else if(readXMLInteger(tmpNode, "futtonPercent", intValue))
-						mType->elementMap[COMBAT_FUTTONDAMAGE] = intValue;
-					else if(readXMLInteger(tmpNode, "jintonPercent", intValue))
-						mType->elementMap[COMBAT_JINTONDAMAGE] = intValue;
-					else if(readXMLInteger(tmpNode, "satetsuPercent", intValue))
-						mType->elementMap[COMBAT_SATETSUDAMAGE] = intValue;
-					else if(readXMLInteger(tmpNode, "taijutsuPercent", intValue))
-						mType->elementMap[COMBAT_TAIJUTSUDAMAGE] = intValue;
-					else if(readXMLInteger(tmpNode, "yinPercent", intValue))
-						mType->elementMap[COMBAT_YINDAMAGE] = intValue;
-					else if(readXMLInteger(tmpNode, "yangPercent", intValue))
-						mType->elementMap[COMBAT_YANGDAMAGE] = intValue; 
-					else if(readXMLInteger(tmpNode, "kenjutsuPercent", intValue))
-						mType->elementMap[COMBAT_KENJUTSUDAMAGE] = intValue;
 				}
 			}
 		}

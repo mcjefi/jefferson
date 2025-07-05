@@ -72,6 +72,7 @@ class IOGuild
 		bool updateWar(War_t& enemy);
 		void finishWar(War_t enemy, bool finished);
 		void frag(Player* player, uint64_t deathId, const DeathList& list, bool score);
+		bool getGGNWin(uint32_t& value);
 
 	private:
 		IOGuild() {}

@@ -46,6 +46,7 @@ class Monster : public Creature
 		static uint32_t monsterCount;
 #endif
 		virtual ~Monster();
+
 		static Monster* createMonster(MonsterType* mType);
 		static Monster* createMonster(const std::string& name);
 
@@ -53,20 +54,23 @@ class Monster : public Creature
 		virtual const Monster* getMonster() const {return this;}
 		virtual CreatureType_t getType() const {return CREATURETYPE_MONSTER;}
 
-		void setID() {
-			if (id == 0) {
+		static uint32_t monsterAutoID;
+		void setID() override
+		{
+			if(id == 0) {
 				id = monsterAutoID++;
 			}
 		}
+
+		virtual uint32_t rangeId() {return MONSTER_ID_RANGE;}
 		static AutoList<Monster> autoList;
 
 		void addList() {autoList[id] = this;}
 		void removeList() {autoList.erase(id);}
 
-		std::string name, nameDescription;
-		virtual const std::string& getName() const { return name; }
-		virtual const std::string& getNameDescription() const { return nameDescription; }
-		virtual std::string getDescription(int32_t) const { return nameDescription + "."; }
+		virtual const std::string& getName() const {return mType->name;}
+		virtual const std::string& getNameDescription() const {return mType->nameDescription;}
+		virtual std::string getDescription(int32_t) const {return mType->nameDescription + ".";}
 
 		virtual RaceType_t getRace() const {return mType->race;}
 		virtual int32_t getArmor() const {return mType->armor;}
@@ -77,19 +81,10 @@ class Monster : public Creature
 		virtual bool isImmune(CombatType_t type) const;
 		bool isEliminable() const {return mType->eliminable;}
 
-        // Wonsr
-		bool isPuppet() const {return mType->isPuppet;}
-		bool isBoss() const {return mType->isBoss;}
-		bool isLimbo() const {return mType->isLimbo;}
-		bool getCanWalkEverywhere() const {return mType->canWalkEverywhere;}
-		virtual uint8_t getSaga() const {return mType->saga;} // Saga System
-		virtual uint8_t getMissao() const {return mType->missao;} // Saga System
-		virtual uint8_t isPlayerSagaBlock(const Creature* creature);// Saga System
-		
-		
 		bool canPushItems() const {return mType->canPushItems;}
 		bool canPushCreatures() const {return mType->canPushCreatures;}
 		bool isHostile() const;
+		bool isPassive() const {return mType->isPassive;}
 		virtual bool isWalkable() const;
 		virtual bool canSeeInvisibility() const {return Creature::isImmune(CONDITION_INVISIBLE);}
 		uint32_t getManaCost() const {return mType->manaCost;}
@@ -128,7 +123,7 @@ class Monster : public Creature
 		bool selectTarget(Creature* creature);
 
 		const CreatureList& getTargetList() {return targetList;}
-		const CreatureList& getFriendList() {return friendList;}
+		const std::unordered_map<uint32_t, Creature*>& getFriendList() { return friendList; }
 
 		bool isTarget(Creature* creature);
 		bool getIdleStatus() const {return isIdle;}
@@ -138,14 +133,12 @@ class Monster : public Creature
 		virtual BlockType_t blockHit(Creature* attacker, CombatType_t combatType, int32_t& damage,
 			bool checkDefense = false, bool checkArmor = false, bool reflect = true, bool field = false, bool element = false);
 
-		static uint32_t monsterAutoID;
-
 	private:
 		CreatureList targetList;
-		CreatureList friendList;
+		std::unordered_map<uint32_t, Creature*> friendList;
 
 		MonsterType* mType;
-        uint8_t saga, missao; // Saga System
+
 		int32_t healthMin;
 		int32_t minCombatValue;
 		int32_t maxCombatValue;
@@ -159,7 +152,6 @@ class Monster : public Creature
 		bool resetTicks;
 		bool isIdle;
 		bool extraMeleeAttack;
-		bool canWalkEverywhere;
 
 		Spawn* spawn;
 		Raid* raid;
@@ -187,7 +179,7 @@ class Monster : public Creature
 		void updateIdleStatus();
 
 		virtual void onAddCondition(ConditionType_t type, bool hadCondition);
-		virtual void onEndCondition(ConditionType_t type);
+		virtual void onEndCondition(ConditionType_t type, ConditionId_t id);
 		virtual void onCreatureConvinced(const Creature* convincer, const Creature* creature);
 
 		bool canUseAttack(const Position& pos, const Creature* target) const;

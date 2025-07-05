@@ -70,7 +70,6 @@ class ChatChannel
 		bool hasUser(Player* player) const {return player && m_users.find(player->getID()) != m_users.end();}
 
 		bool talk(Player* player, MessageClasses type, const std::string& text, uint32_t statementId);
-		bool talkBlocked(Player* player, MessageClasses type, const std::string& text, uint32_t statementId);
 		bool talk(std::string nick, MessageClasses type, const std::string& text);
 
 	protected:
@@ -142,11 +141,6 @@ class Chat
 
 		std::string getChannelName(Player* player, uint16_t channelId);
 		ChannelsList getChannelList(Player* player);
-
-		ChannelsList getCustomChannelList(Player* player, ChannelGroup channels);
-
-		bool talkBlocked(Player* player, MessageClasses type, const std::string& text,
-			uint16_t channelId, uint32_t statementId, bool anonymous = false);
 
 		PrivateChatChannel* getPrivateChannel(Player* player);
 		bool isPrivateChannel(uint16_t cid) const {return m_privateChannels.find(cid) != m_privateChannels.end();}

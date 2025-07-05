@@ -48,7 +48,7 @@ struct Outfit
 		isDefault = true;
 		requirement = REQUIREMENT_BOTH;
 		isPremium = manaShield = invisible = regeneration = false;
-		outfitId = lookType = addons = accessLevel = speed = attackSpeed = vocation = level = 0;
+		outfitId = lookType = addons = accessLevel = speed = attackSpeed = 0;
 		healthGain = healthTicks = manaGain = manaTicks = conditionSuppressions = 0;
 	}
 
@@ -56,7 +56,7 @@ struct Outfit
 	AddonRequirement_t requirement;
 	int16_t absorb[COMBAT_LAST + 1], reflect[REFLECT_LAST + 1][COMBAT_LAST + 1];
 
-	uint16_t accessLevel, addons, vocation, level;
+	uint16_t accessLevel, addons;
 	int32_t skills[SKILL_LAST + 1], skillsPercent[SKILL_LAST + 1], stats[STAT_LAST + 1], statsPercent[STAT_LAST + 1],
 		speed, attackSpeed, healthGain, healthTicks, manaGain, manaTicks, conditionSuppressions;
 

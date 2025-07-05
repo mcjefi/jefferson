@@ -1,21 +1,19 @@
-/**
- * The Forgotten Server - a free and open-source MMORPG server emulator
- * Copyright (C) 2016  Mark Samman <mark.samman@gmail.com>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- */
+////////////////////////////////////////////////////////////////////////
+// OpenTibia - an opensource roleplaying game
+////////////////////////////////////////////////////////////////////////
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+////////////////////////////////////////////////////////////////////////
 
 #ifndef FS_NETWORKMESSAGE_H_B853CFED58D1413A87ACED07B2926E03
 #define FS_NETWORKMESSAGE_H_B853CFED58D1413A87ACED07B2926E03
@@ -95,34 +93,6 @@ class NetworkMessage
 			buffer[position++] = value;
 			length++;
 		}
-		
-		// Wonsr
-		void Add16Byte(uint16_t value)
-		{
-			if(!canAdd(2))
-				return;
-
-			*(uint16_t*)(buffer + position) = value;
-			position += 2; length += 2;
-		}
-		void Add32Byte(uint32_t value)
-		{
-			if(!canAdd(4))
-				return;
-
-			*(uint32_t*)(buffer + position) = value;
-			position += 4; length += 4;
-		}
-		void Add64Byte(uint64_t value)
-		{
-			if(!canAdd(8))
-				return;
-
-			*(uint64_t*)(buffer + position) = value;
-			position += 8; length += 8;
-		}
-		
-		// 
 
 		template<typename T>
 		void add(T value) {
@@ -144,8 +114,8 @@ class NetworkMessage
 
 		// write functions for complex types
 		void addPosition(const Position& pos);
-		void addItem(uint16_t id, uint8_t count);
-		void addItem(const Item* item);
+		void addItem(uint16_t id, uint8_t count, bool withDescription = false);
+		void addItem(const Item* item, bool withDescription = false);
 		void addItemId(uint16_t itemId);
 
 		MsgSize_t getLength() const {

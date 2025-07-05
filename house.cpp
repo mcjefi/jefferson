@@ -34,7 +34,7 @@ extern Game g_game;
 
 House::House(uint32_t houseId)
 {
-	guild = pendingTransfer = isprotected = false;
+	guild = pendingTransfer = false;
 	name = "OTX headquarter (Flat 1, Area 42)";
 	entry = Position();
 	id = houseId;
@@ -133,7 +133,7 @@ bool House::setOwnerEx(uint32_t guid, bool transfer)
 	lastWarning = guid ? time(NULL) : 0;
 
 	Database* db = Database::getInstance();
-	DBTransaction trans;
+	DBTransaction trans(db);
 	if(!trans.begin())
 		return false;
 
@@ -149,13 +149,14 @@ bool House::isGuild() const
 bool House::isBidded() const
 {
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 	query << "SELECT `house_id` FROM `house_auctions` WHERE `house_id` = " << id << " LIMIT 1";
 	if(!(result = db->storeQuery(query.str())))
 		return false;
 
+	result->free();
 	return true;
 }
 
@@ -176,7 +177,7 @@ void House::updateDoorDescription(std::string _name/* = ""*/, Door* door/* = NUL
 		sprintf(houseDescription, "It belongs to %s '%s'. %s owns this %s.", tmp.c_str(), name.c_str(), _name.c_str(), tmp.c_str());
 	}
 	else
-		sprintf(houseDescription, "It belongs to %s '%s'. Nobody owns this %s. It costs %d coins.", tmp.c_str(), name.c_str(), tmp.c_str(), price);
+		sprintf(houseDescription, "It belongs to %s '%s'. Nobody owns this %s. It costs %d gold coins.", tmp.c_str(), name.c_str(), tmp.c_str(), price);
 
 	if(!door)
 	{
@@ -344,7 +345,7 @@ AccessHouseLevel_t House::getHouseAccessLevel(const Player* player)
 			}
 		}
 	}
-	else if(player->getGUID() == owner/* || player->marriage == owner*/)
+	else if(player->getGUID() == owner || player->marriage == owner)
 		return HOUSE_OWNER;
 
 	if(subOwnerList.isInList(player))
@@ -486,9 +487,6 @@ bool AccessList::parseList(const std::string& _list)
 		trimString(line);
 
 		toLowerCaseString(line);
-		if(line.empty())
-			break;
-		
 		if(line.substr(0, 1) == "#" || line.length() > 100)
 			continue;
 
@@ -956,7 +954,7 @@ bool Houses::payHouse(House* house, time_t _time, uint32_t bid)
 			{
 				letter->setWriter(g_config.getString(ConfigManager::SERVER_NAME));
 				letter->setDate(std::time(NULL));
-				std::stringstream s;
+				std::ostringstream s;
 
 				s << "Warning!\nThe ";
 				switch(rentPeriod)
@@ -977,7 +975,7 @@ bool Houses::payHouse(House* house, time_t _time, uint32_t bid)
 						break;
 				}
 
-				s << " rent of " << house->getRent() << " coins for your "
+				s << " rent of " << house->getRent() << " gold for your "
 					<< (house->isGuild() ? "guild hall" : "house") << " \"" << house->getName()
 					<< "\" has to be paid. Have it within " << (warningsLimit - warnings)
 					<< " days or you will lose your " << (house->isGuild() ? "guild hall" : "house") << ".";

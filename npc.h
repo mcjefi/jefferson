@@ -362,6 +362,14 @@ class Npc : public Creature
 #endif
 		virtual ~Npc();
 
+		static uint32_t npcAutoID;
+		void setID() override
+		{
+			if(id == 0) {
+				id = npcAutoID++;
+			}
+		}
+
 		static Npc* createNpc(NpcType* nType);
 		static Npc* createNpc(const std::string& name);
 
@@ -369,11 +377,7 @@ class Npc : public Creature
 		virtual const Npc* getNpc() const {return this;}
 		virtual CreatureType_t getType() const {return CREATURETYPE_NPC;}
 
-		void setID() {
-			if (id == 0) {
-				id = npcAutoID++;
-			}
-		}
+		virtual uint32_t rangeId() {return NPC_ID_RANGE;}
 		static AutoList<Npc> autoList;
 
 		void addList() {autoList[id] = this;}
@@ -405,9 +409,6 @@ class Npc : public Creature
 
 		void setCreatureFocus(Creature* creature);
 		NpcScript* getInterface();
-
-
-		static uint32_t npcAutoID;
 
 	protected:
 		Npc(NpcType* _nType);

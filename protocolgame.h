@@ -66,9 +66,8 @@ class ProtocolGame : public Protocol
 			protocolGameCount++;
 #endif
 			player = NULL;
-			player_old = NULL;
 			eventConnect = m_packetCount = m_packetTime = 0;
-			m_debugAssertSent = acceptPackets = m_spectator = is_spectating = false;
+			m_debugAssertSent = acceptPackets = m_spectator = false;
 		}
 		virtual ~ProtocolGame()
 		{
@@ -84,15 +83,18 @@ class ProtocolGame : public Protocol
 		bool logout(bool displayEffect, bool forceLogout);
 		void chat(uint16_t channelId);
 
-		bool spectatePlayer(const std::string& name, const std::string& password);
-		void returnPlayer();
-
-		void spectatorTurn(uint8_t direction);
+		OperatingSystem_t getOperatingSystem() {
+			return operatingSystem;
+		}
 
 		void setPlayer(Player* p);
 		Player* getPlayer() const {return player;}
 
 	private:
+		uint32_t getSequence() {
+			return sequence++;
+		}
+
 		ProtocolGame_ptr getThis() {
 			return std::static_pointer_cast<ProtocolGame>(shared_from_this());
 		}
@@ -212,6 +214,7 @@ class ProtocolGame : public Protocol
 		void sendCreatureHealth(const Creature* creature);
 		void sendSkills();
 		void sendPing();
+		void sendPingCheck();
 		void sendCreatureTurn(const Creature* creature, int16_t stackpos);
 		void sendCreatureSay(const Creature* creature, MessageClasses type, const std::string& text, Position* pos, uint32_t statementId);
 		void sendCreatureChannelSay(const Creature* creature, MessageClasses type, const std::string& text, uint16_t channelId, uint32_t statementId);
@@ -347,13 +350,31 @@ class ProtocolGame : public Protocol
 		template<class FunctionType>
 		void addGameTaskInternal(uint32_t delay, const FunctionType&);
 
+		void parseChangeAwareRange(NetworkMessage& msg);
+		void updateAwareRange(int width, int height);
+		void sendAwareRange();
+		void sendMapDescription(const Position& pos, OutputMessage_ptr msg = NULL);
+		void sendFloorDescription(const Position& pos, int floor);
+
+		struct AwareRange {
+			int width = 17;
+			int height = 13;
+
+			int left() const { return width / 2; }
+			int right() const { return 1 + width / 2; }
+			int top() const { return height / 2; }
+			int bottom() const { return 1 + height / 2; }
+			int horizontal() const { return width + 1; }
+			int vertical() const { return height + 1; }
+
+		} awareRange;   
 		friend class Player;
 		friend class Spectators;
 		Player* player;
-		Player* player_old;
 
-		time_t m_lastSwitch;
+		OperatingSystem_t operatingSystem;
+		uint32_t sequence;
 		uint32_t eventConnect, m_maxSizeCount, m_packetCount, m_packetTime;
-		bool m_debugAssertSent, acceptPackets, m_spectator, is_spectating;
+		bool m_debugAssertSent, acceptPackets, m_spectator;
 };
 #endif

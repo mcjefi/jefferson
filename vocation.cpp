@@ -97,15 +97,6 @@ bool Vocations::parseVocationNode(xmlNodePtr p)
 
 	if(readXMLInteger(p, "attackspeed", intValue))
 		voc->setAttackSpeed(intValue);
-	
-	if(readXMLString(p, "canseelimbo", strValue))
-		voc->setCanSeeLimbo(booleanString(strValue));
-	
-	if(readXMLInteger(p, "corpseid", intValue))
-		voc->setCorpseId(intValue);
-	
-	if(readXMLInteger(p, "ratespeed", intValue))
-		voc->setRateSpeed(intValue);
 
 	if(readXMLInteger(p, "basespeed", intValue))
 		voc->setBaseSpeed(intValue);
@@ -203,12 +194,6 @@ bool Vocations::parseVocationNode(xmlNodePtr p)
 		{
 			if(readXMLFloat(configNode, "meleeDamage", floatValue))
 				voc->setMultiplier(MULTIPLIER_MELEE, floatValue);
-			
-			if(readXMLFloat(configNode, "swordDamage", floatValue))
-				voc->setMultiplier(MULTIPLIER_SWORD, floatValue);
-			
-			if(readXMLFloat(configNode, "gloveDamage", floatValue))
-				voc->setMultiplier(MULTIPLIER_GLOVE, floatValue);
 
 			if(readXMLFloat(configNode, "distDamage", floatValue) || readXMLFloat(configNode, "distanceDamage", floatValue))
 				voc->setMultiplier(MULTIPLIER_DISTANCE, floatValue);
@@ -245,26 +230,6 @@ bool Vocations::parseVocationNode(xmlNodePtr p)
 				voc->increaseAbsorb(COMBAT_FIREDAMAGE, intValue);
 				voc->increaseAbsorb(COMBAT_EARTHDAMAGE, intValue);
 				voc->increaseAbsorb(COMBAT_ICEDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_SUITONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_FUUTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_DOTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_RAITONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_MOKUTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_SHOTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_SUNADAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_ENTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_HYOTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_YOTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_RANTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_BAKUTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_SHAKUTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_FUTTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_JINTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_SATETSUDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_TAIJUTSUDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_YINDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_YANGDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_KENJUTSUDAMAGE, intValue);
 			}
 
 			if(readXMLInteger(configNode, "percentMagic", intValue))
@@ -275,68 +240,8 @@ bool Vocations::parseVocationNode(xmlNodePtr p)
 				voc->increaseAbsorb(COMBAT_ICEDAMAGE, intValue);
 				voc->increaseAbsorb(COMBAT_HOLYDAMAGE, intValue);
 				voc->increaseAbsorb(COMBAT_DEATHDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_SUITONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_FUUTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_DOTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_RAITONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_MOKUTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_SHOTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_SUNADAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_ENTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_HYOTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_YOTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_RANTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_BAKUTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_SHAKUTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_FUTTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_JINTONDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_SATETSUDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_TAIJUTSUDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_YINDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_YANGDAMAGE, intValue);
-				voc->increaseAbsorb(COMBAT_KENJUTSUDAMAGE, intValue);
 			}
-            if(readXMLInteger(configNode, "percentSuiton", intValue))
-				voc->increaseAbsorb(COMBAT_SUITONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentFuuton", intValue))
-				voc->increaseAbsorb(COMBAT_FUUTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentDoton", intValue))
-				voc->increaseAbsorb(COMBAT_DOTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentRaiton", intValue))
-				voc->increaseAbsorb(COMBAT_RAITONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentMokuton", intValue))
-				voc->increaseAbsorb(COMBAT_MOKUTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentShoton", intValue))
-				voc->increaseAbsorb(COMBAT_SHOTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentSuna", intValue))
-				voc->increaseAbsorb(COMBAT_SUNADAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentEnton", intValue))
-				voc->increaseAbsorb(COMBAT_ENTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentHyoton", intValue))
-				voc->increaseAbsorb(COMBAT_HYOTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentYoton", intValue))
-				voc->increaseAbsorb(COMBAT_YOTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentRanton", intValue))
-				voc->increaseAbsorb(COMBAT_RANTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentBakuton", intValue))
-				voc->increaseAbsorb(COMBAT_BAKUTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentShakuton", intValue))
-				voc->increaseAbsorb(COMBAT_SHAKUTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentFutton", intValue))
-				voc->increaseAbsorb(COMBAT_FUTTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentJinton", intValue))
-				voc->increaseAbsorb(COMBAT_JINTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentSatetsu", intValue))
-				voc->increaseAbsorb(COMBAT_SATETSUDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentTaijutsu", intValue))
-				voc->increaseAbsorb(COMBAT_TAIJUTSUDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentYin", intValue))
-				voc->increaseAbsorb(COMBAT_YINDAMAGE, intValue);		
-            if(readXMLInteger(configNode, "percentYang", intValue))
-				voc->increaseAbsorb(COMBAT_YANGDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentKenjutsu", intValue))
-				voc->increaseAbsorb(COMBAT_KENJUTSUDAMAGE, intValue);
-			
+
 			if(readXMLInteger(configNode, "percentEnergy", intValue))
 				voc->increaseAbsorb(COMBAT_ENERGYDAMAGE, intValue);
 
@@ -387,26 +292,6 @@ bool Vocations::parseVocationNode(xmlNodePtr p)
 				voc->increaseReflect(REFLECT_PERCENT, COMBAT_FIREDAMAGE, intValue);
 				voc->increaseReflect(REFLECT_PERCENT, COMBAT_EARTHDAMAGE, intValue);
 				voc->increaseReflect(REFLECT_PERCENT, COMBAT_ICEDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_SUITONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_FUUTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_DOTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_RAITONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_MOKUTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_SHOTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_SUNADAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_ENTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_HYOTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_YOTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_RANTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_BAKUTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_SHAKUTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_FUTTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_JINTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_SATETSUDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_TAIJUTSUDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_YINDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_YANGDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_KENJUTSUDAMAGE, intValue);
 			}
 
 			if(readXMLInteger(configNode, "percentMagic", intValue))
@@ -417,80 +302,8 @@ bool Vocations::parseVocationNode(xmlNodePtr p)
 				voc->increaseReflect(REFLECT_PERCENT, COMBAT_ICEDAMAGE, intValue);
 				voc->increaseReflect(REFLECT_PERCENT, COMBAT_HOLYDAMAGE, intValue);
 				voc->increaseReflect(REFLECT_PERCENT, COMBAT_DEATHDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_SUITONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_FUUTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_DOTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_RAITONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_MOKUTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_SHOTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_SUNADAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_ENTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_HYOTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_YOTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_RANTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_BAKUTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_SHAKUTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_FUTTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_JINTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_SATETSUDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_TAIJUTSUDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_YINDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_YANGDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_KENJUTSUDAMAGE, intValue);
 			}
-            
-			if(readXMLInteger(configNode, "percentSuiton", intValue))
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_SUITONDAMAGE, intValue);
-            if(readXMLInteger(configNode, "percentFuuton", intValue))
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_FUUTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentDoton", intValue))
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_DOTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentRaiton", intValue))
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_RAITONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentMokuton", intValue))
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_MOKUTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentShoton", intValue))
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_SHOTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentSuna", intValue))
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_SUNADAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentEnton", intValue))
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_ENTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "percentHyoton", intValue))
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_HYOTONDAMAGE, intValue);
-			
-			if(readXMLInteger(configNode, "percentYoton", intValue))
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_YOTONDAMAGE, intValue);
 
-			if(readXMLInteger(configNode, "percentRanton", intValue))
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_RANTONDAMAGE, intValue);
-
-			if(readXMLInteger(configNode, "percentBakuton", intValue))
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_BAKUTONDAMAGE, intValue);
-
-			if(readXMLInteger(configNode, "percentShakuton", intValue))
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_SHAKUTONDAMAGE, intValue);
-
-			if(readXMLInteger(configNode, "percentFutton", intValue))
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_FUTTONDAMAGE, intValue);
-
-			if(readXMLInteger(configNode, "percentJinton", intValue))
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_JINTONDAMAGE, intValue);
-
-			if(readXMLInteger(configNode, "percentSatetsu", intValue))
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_SATETSUDAMAGE, intValue);
-
-			if(readXMLInteger(configNode, "percentTaijutsu", intValue))
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_TAIJUTSUDAMAGE, intValue);
-
-			if(readXMLInteger(configNode, "percentYin", intValue))
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_YINDAMAGE, intValue);
-		
-		    if(readXMLInteger(configNode, "percentYang", intValue))
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_YANGDAMAGE, intValue);
-			
-			if(readXMLInteger(configNode, "percentKenjutsu", intValue))
-				voc->increaseReflect(REFLECT_PERCENT, COMBAT_KENJUTSUDAMAGE, intValue);
-			
 			if(readXMLInteger(configNode, "percentEnergy", intValue))
 				voc->increaseReflect(REFLECT_PERCENT, COMBAT_ENERGYDAMAGE, intValue);
 
@@ -539,26 +352,6 @@ bool Vocations::parseVocationNode(xmlNodePtr p)
 				voc->increaseReflect(REFLECT_CHANCE, COMBAT_FIREDAMAGE, intValue);
 				voc->increaseReflect(REFLECT_CHANCE, COMBAT_EARTHDAMAGE, intValue);
 				voc->increaseReflect(REFLECT_CHANCE, COMBAT_ICEDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_SUITONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_FUUTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_DOTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_RAITONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_MOKUTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_SHOTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_SUNADAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_ENTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_HYOTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_YOTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_RANTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_BAKUTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_SHAKUTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_FUTTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_JINTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_SATETSUDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_TAIJUTSUDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_YINDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_YANGDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_KENJUTSUDAMAGE, intValue);
 			}
 
 			if(readXMLInteger(configNode, "chanceMagic", intValue))
@@ -569,79 +362,7 @@ bool Vocations::parseVocationNode(xmlNodePtr p)
 				voc->increaseReflect(REFLECT_CHANCE, COMBAT_ICEDAMAGE, intValue);
 				voc->increaseReflect(REFLECT_CHANCE, COMBAT_HOLYDAMAGE, intValue);
 				voc->increaseReflect(REFLECT_CHANCE, COMBAT_DEATHDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_SUITONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_FUUTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_DOTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_RAITONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_MOKUTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_SHOTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_SUNADAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_ENTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_HYOTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_YOTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_RANTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_BAKUTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_SHAKUTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_FUTTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_JINTONDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_SATETSUDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_TAIJUTSUDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_YINDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_YANGDAMAGE, intValue);
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_KENJUTSUDAMAGE, intValue);
 			}
-			
-			if(readXMLInteger(configNode, "chanceSuiton", intValue))
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_SUITONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "chanceFuuton", intValue))
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_FUUTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "chanceDoton", intValue))
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_DOTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "chanceRaiton", intValue))
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_RAITONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "chanceMokuton", intValue))
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_MOKUTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "chanceShoton", intValue))
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_SHOTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "chanceSuna", intValue))
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_SUNADAMAGE, intValue);
-			if(readXMLInteger(configNode, "chanceEnton", intValue))
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_ENTONDAMAGE, intValue);
-			if(readXMLInteger(configNode, "chanceHyoton", intValue))
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_HYOTONDAMAGE, intValue);
-			
-			if(readXMLInteger(configNode, "chanceYoton", intValue))
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_YOTONDAMAGE, intValue);
-
-			if(readXMLInteger(configNode, "chanceRanton", intValue))
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_RANTONDAMAGE, intValue);
-
-			if(readXMLInteger(configNode, "chanceBakuton", intValue))
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_BAKUTONDAMAGE, intValue);
-
-			if(readXMLInteger(configNode, "chanceShakuton", intValue))
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_SHAKUTONDAMAGE, intValue);
-
-			if(readXMLInteger(configNode, "chanceFutton", intValue))
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_FUTTONDAMAGE, intValue);
-
-			if(readXMLInteger(configNode, "chanceJinton", intValue))
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_JINTONDAMAGE, intValue);
-
-			if(readXMLInteger(configNode, "chanceSatetsu", intValue))
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_SATETSUDAMAGE, intValue);
-
-			if(readXMLInteger(configNode, "chanceTaijutsu", intValue))
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_TAIJUTSUDAMAGE, intValue);
-
-			if(readXMLInteger(configNode, "chanceYin", intValue))
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_YINDAMAGE, intValue);
-			
-			if(readXMLInteger(configNode, "chanceYang", intValue))
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_YANGDAMAGE, intValue);
-
-			if(readXMLInteger(configNode, "chanceKenjutsu", intValue))
-				voc->increaseReflect(REFLECT_CHANCE, COMBAT_KENJUTSUDAMAGE, intValue);
 
 			if(readXMLInteger(configNode, "chanceEnergy", intValue))
 				voc->increaseReflect(REFLECT_CHANCE, COMBAT_ENERGYDAMAGE, intValue);
@@ -764,10 +485,6 @@ void Vocation::reset()
 	baseSpeed = 220;
 	attackSpeed = 1500;
 	name = description = "";
-	// Wonsr
-	seelimbo = false;
-	corpseID = 3058;
-	rateSpeed = 1.0;
 
 	gainAmount[GAIN_HEALTH] = gainAmount[GAIN_MANA] = gainAmount[GAIN_SOUL] = 1;
 	gain[GAIN_HEALTH] = gain[GAIN_MANA] = capGain = 5;

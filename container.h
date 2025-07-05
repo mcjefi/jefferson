@@ -93,6 +93,8 @@ class Container : public Item, public Cylinder
 		ContainerIterator begin() const;
 		ContainerIterator end() const;
 
+		const ItemList& getItemList() const {return itemlist;}
+
 		ItemList::const_iterator getItems() const {return itemlist.begin();}
 		ItemList::const_iterator getEnd() const {return itemlist.end();}
 
@@ -153,7 +155,7 @@ class Container : public Item, public Cylinder
 
 		Container* getParentContainer();
 		void updateItemWeight(double diff);
-		std::stringstream& getContentDescription(std::stringstream& s) const;
+		std::ostringstream& getContentDescription(std::ostringstream& s) const;
 
 	protected:
 		uint32_t maxSize, serializationCount;

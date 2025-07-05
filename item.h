@@ -133,6 +133,15 @@ struct TeleportDest
 };
 #pragma pack()
 
+struct MagicAttributes
+{
+	std::string name;
+	int32_t value;
+	std::string attributeType;
+	skills_t skillType;
+	stats_t statType;
+};
+
 typedef std::list<Item*> ItemList;
 typedef std::vector<Item*> ItemVector;
 
@@ -140,7 +149,8 @@ class Item : virtual public Thing, public ItemAttributes
 {
 	public:
 		static Items items;
-
+		std::vector<MagicAttributes> magicAttributes;
+		
 		//Factory member to create item of right type based on type
 		static Item* CreateItem(const uint16_t type, uint16_t amount = 0);
 		static Item* CreateItem(PropStream& propStream);
@@ -155,8 +165,6 @@ class Item : virtual public Thing, public ItemAttributes
 
 		virtual Item* clone() const;
 		virtual void copyAttributes(Item* item);
-		void generateSerial();
-		virtual void copyAllAttributes(Item* item);
 		void makeUnique(Item* parent);
 
 		virtual Item* getItem() {return this;}
@@ -190,6 +198,7 @@ class Item : virtual public Thing, public ItemAttributes
 		static std::string getDescription(const ItemType& it, int32_t lookDistance, const Item* item = NULL, int32_t subType = -1, bool addArticle = true);
 		static std::string getNameDescription(const ItemType& it, const Item* item = NULL, int32_t subType = -1, bool addArticle = true);
 		static std::string getWeightDescription(double weight, bool stackable, uint32_t count = 1);
+		void generateSerial();
 
 		virtual std::string getDescription(int32_t lookDistance) const {return getDescription(items[id], lookDistance, this);}
 		std::string getNameDescription() const {return getNameDescription(items[id], this);}
@@ -205,7 +214,7 @@ class Item : virtual public Thing, public ItemAttributes
 		virtual bool unserializeItemNode(FileLoader&, NODE, PropStream& propStream) {return unserializeAttr(propStream);}
 
 		// Item attributes
-		void setDuration(int32_t time) {duration=time;}
+		void setDuration(int32_t time) { duration = time; }
 		void decreaseDuration(int32_t time);
 		int32_t getDuration() const;
 
@@ -255,10 +264,9 @@ class Item : virtual public Thing, public ItemAttributes
 
 		bool isScriptProtected() const;
 		bool isDualWield() const;
-    
-	
-	    int32_t getCriticalHitChance() const;
+
 		int32_t getAttack() const;
+		int32_t getCriticalHitChance() const;
 		int32_t getExtraAttack() const;
 		int32_t getDefense() const;
 		int32_t getExtraDefense() const;
@@ -272,12 +280,6 @@ class Item : virtual public Thing, public ItemAttributes
 		WeaponType_t getWeaponType() const {return items[id].weaponType;}
 		int32_t getSlotPosition() const {return items[id].slotPosition;}
 		int32_t getWieldPosition() const {return items[id].wieldPosition;}
-		
-		// Wonsr
-		
-		uint16_t getRareMode() const {return items[id].rareSystemR;}
-		uint16_t getEpicMode() const {return items[id].rareSystemE;}
-		uint16_t getLegendMode() const {return items[id].rareSystemL;}
 
 		virtual double getWeight() const;
 		void getLight(LightInfo& lightInfo);
@@ -355,12 +357,14 @@ class Item : virtual public Thing, public ItemAttributes
 		virtual bool onTradeEvent(TradeEvents_t, Player*, Player*) {return true;}
 
 		static uint32_t countByType(const Item* item, int32_t checkType);
+		void setMagicAttributes();
 
 	protected:
 		uint16_t id;
 		uint8_t count;
-
+		int32_t itemUid;
 		int32_t duration;
+
 		Raid* raid;
 		bool loadedFromMap;
 };

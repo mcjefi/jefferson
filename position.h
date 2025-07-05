@@ -32,12 +32,14 @@ enum Direction
 	SOUTHWEST = 4,
 	SOUTHEAST = 5,
 	NORTHWEST = 6,
-	NORTHEAST = 7
+	NORTHEAST = 7,
+	NODIR = 8
 };
 
 typedef std::pair<int32_t, int32_t> PositionPair;
 typedef std::vector<PositionPair> PairVector;
 typedef std::vector<Direction> DirVector;
+typedef std::list<Direction> DirList;
 
 class Position
 {
@@ -61,6 +63,27 @@ class Position
 		{
 			return !(std::abs(float(p1.x - p2.x)) > r.x || std::abs(float(p1.y - p2.y)) > r.y || std::abs(float(p1.z - p2.z)) > r.z);
 		}
+		
+		//--TFS 1.X METHODS--//
+		static int_fast32_t getOffsetX(const Position& p1, const Position& p2) {
+			return p1.x - p2.x;
+		}
+		static int_fast32_t getOffsetY(const Position& p1, const Position& p2) {
+			return p1.y - p2.y;
+		}
+		static int_fast16_t getOffsetZ(const Position& p1, const Position& p2) {
+			return p1.z - p2.z;
+		}
+		static int32_t getDistanceX(const Position& p1, const Position& p2) {
+			return std::abs(Position::getOffsetX(p1, p2));
+		}
+		static int32_t getDistanceY(const Position& p1, const Position& p2) {
+			return std::abs(Position::getOffsetY(p1, p2));
+		}
+		static int16_t getDistanceZ(const Position& p1, const Position& p2) {
+			return std::abs(Position::getOffsetZ(p1, p2));
+		}
+		//--END OF TFS 1.X METHODS--//
 
 		Position(uint16_t _x, uint16_t _y, uint16_t _z): x(_x), y(_y), z(_z) {}
 		uint16_t x, y, z;
@@ -129,7 +152,7 @@ class PositionEx : public Position
 		PositionEx(Position p): Position(p.x, p.y, p.z), stackpos(0) {}
 		PositionEx(Position p, int16_t _stackpos): Position(p.x, p.y, p.z), stackpos(_stackpos) {}
 
-		int16_t stackpos = 0;
+		int16_t stackpos;
 
 		bool operator==(const PositionEx& p) const
 		{

@@ -88,12 +88,14 @@ class MonsterType
 		void reset();
 
 		void dropLoot(Container* corpse);
-		ItemList createLoot(const LootBlock& lootBlock, Player* owner = NULL);
-		uint16_t getLootRare(uint16_t item_id, Player* owner);
+		void dropLootOld(Container* corpse);
+		bool createChildLootOld(Container* parent, const LootBlock& lootBlock);
+
+		ItemList createLoot(const LootBlock& lootBlock);
 		bool createChildLoot(Container* parent, const LootBlock& lootBlock, uint32_t& money, std::stringstream& str, Player* player);
 
-		bool isSummonable, isIllusionable, isConvinceable, isAttackable, isHostile, isLureable,
-			isWalkable, canPushItems, canPushCreatures, pushable, hideName, hideHealth, eliminable, playerblockspawn, canWalkEverywhere, isPuppet, isBoss , isLimbo;
+		bool isSummonable, isIllusionable, isConvinceable, isAttackable, isHostile, isPassive, isLureable,
+			isWalkable, canPushItems, canPushCreatures, pushable, hideName, hideHealth, eliminable;
 
 		Outfit_t outfit;
 		RaceType_t race;
@@ -107,7 +109,6 @@ class MonsterType
 			lightLevel, lightColor, changeTargetSpeed, changeTargetChance;
 		uint32_t yellChance, yellSpeedTicks, staticAttackChance, manaCost;
 		uint64_t experience;
-		uint8_t saga, missao;
 
 		std::string name, nameDescription, file;
 
@@ -136,7 +137,7 @@ class Monsters
 
 		uint32_t getIdByName(const std::string& name);
 		bool isLoaded() const {return loaded;}
-		static uint16_t getLootRandom(Player* owner = NULL);
+		static uint16_t getLootRandom();
 
 	private:
 		bool loaded;

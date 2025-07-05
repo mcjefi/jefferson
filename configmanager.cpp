@@ -20,7 +20,6 @@
 #include "configmanager.h"
 #include "house.h"
 #include "tools.h"
-#include "resources.h"
 
 ConfigManager::ConfigManager()
 {
@@ -102,7 +101,6 @@ bool ConfigManager::load()
 		m_confBool[OPTIMIZE_DATABASE] = getGlobalBool("startupDatabaseOptimization", true);
 		m_confString[MAP_NAME] = getGlobalString("mapName", "forgotten.otbm");
 		m_confBool[GLOBALSAVE_ENABLED] = getGlobalBool("globalSaveEnabled", true);
-		m_confNumber[SERVICE_THREADS] = getGlobalNumber("serviceThreads", 1);
 		m_confNumber[GLOBALSAVE_H] = getGlobalNumber("globalSaveHour", 8);
 		m_confNumber[GLOBALSAVE_M] = getGlobalNumber("globalSaveMinute", 0);
 		m_confString[HOUSE_RENT_PERIOD] = getGlobalString("houseRentPeriod", "monthly");
@@ -115,15 +113,16 @@ bool ConfigManager::load()
 		#ifndef __LOGIN_SERVER__
 		m_confBool[LOGIN_ONLY_LOGINSERVER] = getGlobalBool("loginOnlyWithLoginServer", false);
 		#endif
-		m_confString[ENCRYPTION_TYPE] = getGlobalString("encryptionType", "sha256");
-		m_confString[RSA_PRIME1] = getGlobalString("rsaPrime1", "14299623962416399520070177382898895550795403345466153217470516082934737582776038882967213386204600674145392845853859217990626450972452084065728686565928113");
-		m_confString[RSA_PRIME2] = getGlobalString("rsaPrime2", "7630979195970404721891201847792002125535401292779123937207447574596692788513647179235335529307251350570728407373705564708871762033017096809910315212884101");
-		m_confString[RSA_PUBLIC] = getGlobalString("rsaPublic", "65537");
-		m_confString[RSA_MODULUS] = getGlobalString("rsaModulus", "109120132967399429278860960508995541528237502902798129123468757937266291492576446330739696001110603907230888610072655818825358503429057592827629436413108566029093628212635953836686562675849720620786279431090218017681061521755056710823876476444260558147179707119674283982419152118103759076030616683978566631413");
-		m_confString[RSA_PRIVATE] = getGlobalString("rsaPrivate", "46730330223584118622160180015036832148732986808519344675210555262940258739805766860224610646919605860206328024326703361630109888417839241959507572247284807035235569619173792292786907845791904955103601652822519121908367187885509270025388641700821735345222087940578381210879116823013776808975766851829020659073");
+		m_confString[ENCRYPTION_TYPE] = getGlobalString("encryptionType", "sha1");
 	}
 
 	m_confString[MAP_AUTHOR] = getGlobalString("mapAuthor", "Unknown");
+	m_confNumber[LOGIN_TRIES] = getGlobalNumber("loginTries", 3);
+	m_confString[AUTOLOOT_BLOCKIDS] = getGlobalString("AutoLoot_BlockIDs", "");	//autoloot by naze#3578
+	m_confString[AUTOLOOT_MONEYIDS] = getGlobalString("AutoLoot_MoneyIDs", "2148;2152;2160"); //autoloot by naze#3578
+	m_confNumber[AUTOLOOT_MAXITEM] = getGlobalNumber("AutoLoot_MaxItem", 100); //autoloot by naze#3578
+	m_confString[MAP_AUTHOR] = getGlobalString("mapAuthor", "Unknown");
+	m_confBool[USEDAMAGE_IN_K] = getGlobalBool("modifyDamageInK", false);
 	m_confNumber[LOGIN_TRIES] = getGlobalNumber("loginTries", 3);
 	m_confNumber[RETRY_TIMEOUT] = getGlobalNumber("retryTimeout", 30000);
 	m_confNumber[LOGIN_TIMEOUT] = getGlobalNumber("loginTimeout", 5000);
@@ -161,6 +160,7 @@ bool ConfigManager::load()
 	m_confBool[ACCOUNT_MANAGER] = getGlobalBool("accountManager", true);
 	m_confBool[NAMELOCK_MANAGER] = getGlobalBool("namelockManager", false);
 	m_confNumber[START_LEVEL] = getGlobalNumber("newPlayerLevel", 1);
+	m_confNumber[LOOT_CHANNEL] = getGlobalNumber("lootChannelId", 11);
 	m_confNumber[START_MAGICLEVEL] = getGlobalNumber("newPlayerMagicLevel", 0);
 	m_confBool[START_CHOOSEVOC] = getGlobalBool("newPlayerChooseVoc", false);
 	m_confNumber[HOUSE_PRICE] = getGlobalNumber("housePriceEachSquare", 1000);
@@ -218,6 +218,7 @@ bool ConfigManager::load()
 	m_confBool[SHOW_MANA_CHANGE] = getGlobalBool("showManaChange", true);
 	m_confBool[TELEPORT_SUMMONS] = getGlobalBool("teleportAllSummons", false);
 	m_confBool[TELEPORT_PLAYER_SUMMONS] = getGlobalBool("teleportPlayerSummons", false);
+	m_confBool[AUTOLOOT_ENABLE_SYSTEM] = getGlobalBool("Autoloot_enabled", false);
 	m_confBool[PVP_TILE_IGNORE_PROTECTION] = getGlobalBool("pvpTileIgnoreLevelAndVocationProtection", true);
 	m_confBool[DISPLAY_CRITICAL_HIT] = getGlobalBool("displayCriticalHitNotify", false);
 	m_confBool[CLEAN_PROTECTED_ZONES] = getGlobalBool("cleanProtectedZones", true);
@@ -268,7 +269,6 @@ bool ConfigManager::load()
 	m_confBool[BUFFER_SPELL_FAILURE] = getGlobalBool("bufferMutedOnSpellFailure", false);
 	m_confNumber[GUILD_PREMIUM_DAYS] = getGlobalNumber("premiumDaysToFormGuild", 0);
 	m_confNumber[PUSH_CREATURE_DELAY] = getGlobalNumber("pushCreatureDelay", 2000);
-	m_confBool[DIAGONAL_PUSH] = getGlobalBool("diagonalPush", true);
 	m_confNumber[DEATH_CONTAINER] = getGlobalNumber("deathContainerId", 1987);
 	m_confBool[PREMIUM_SKIP_WAIT] = getGlobalBool("premiumPlayerSkipWaitList", false);
 	m_confNumber[MAXIMUM_DOOR_LEVEL] = getGlobalNumber("maximumDoorLevel", 500);
@@ -299,7 +299,7 @@ bool ConfigManager::load()
 	m_confNumber[TRADE_LIMIT] = getGlobalNumber("tradeLimit", 100);
 	m_confString[MAILBOX_DISABLED_TOWNS] = getGlobalString("mailboxDisabledTowns", "");
 	m_confNumber[SQUARE_COLOR] = getGlobalNumber("squareColor", 0);
-	m_confBool[USE_BLACK_SKULL] = getGlobalBool("useBlackSkull", false);
+	m_confBool[USE_BLACK_SKULL] = getGlobalBool("useBlackSkull", true);
 	m_confBool[USE_FRAG_HANDLER] = getGlobalBool("useFragHandler", true);
 	m_confNumber[LOOT_MESSAGE] = getGlobalNumber("monsterLootMessage", 3);
 	m_confNumber[LOOT_MESSAGE_TYPE] = getGlobalNumber("monsterLootMessageType", 19);
@@ -335,7 +335,6 @@ bool ConfigManager::load()
 	m_confNumber[DEFAULT_DEPOT_SIZE] = getGlobalNumber("defaultDepotSize", 2000);
 	m_confBool[USE_CAPACITY] = getGlobalBool("useCapacity", true);
 	m_confBool[DAEMONIZE] = getGlobalBool("daemonize", false);
-	m_confBool[TIBIA_SLOTS] = getGlobalBool("tibiaClassicSlots", true);
 	m_confBool[SKIP_ITEMS_VERSION] = getGlobalBool("skipItemsVersionCheck", false);
 	m_confBool[SILENT_LUA] = getGlobalBool("disableLuaErrors", false);
 	m_confNumber[MAIL_ATTEMPTS] = getGlobalNumber("mailMaxAttempts", 20);
@@ -352,7 +351,7 @@ bool ConfigManager::load()
 	m_confBool[ALLOW_BLOCK_SPAWN] = getGlobalBool("allowBlockSpawn", true);
 	m_confNumber[FOLLOW_EXHAUST] = getGlobalNumber("playerFollowExhaust", 2000);
 	m_confBool[MULTIPLE_NAME] = getGlobalBool("multipleNames", false);
-	m_confNumber[PACKETS_PER_SECOND] = getGlobalNumber("packetsPerSecond", 50);
+	m_confNumber[MAX_PACKETS_PER_SECOND] = getGlobalNumber("packetsPerSecond", 50);
 	m_confBool[SAVE_STATEMENT] = getGlobalBool("logPlayersStatements", true);
 	m_confNumber[GUI_PREMIUM_DAYS] = getGlobalNumber("premiumDaysToAddByGui", 30);
 	m_confBool[MANUAL_ADVANCED_CONFIG] = getGlobalBool("manualVersionConfig", false);
@@ -362,22 +361,15 @@ bool ConfigManager::load()
 	m_confBool[USE_RUNE_REQUIREMENTS] = getGlobalBool("useRunesRequirements", true);
 	m_confNumber[HIGHSCORES_TOP] = getGlobalNumber("highscoreDisplayPlayers", 10);
 	m_confNumber[HIGHSCORES_UPDATETIME] = getGlobalNumber("updateHighscoresAfterMinutes", 60);
-	m_confBool[ATTACK_IMMEDIATELY_AFTER_LOGGING_IN] = getGlobalBool("attackImmediatelyAfterLoggingIn", false);
-	m_confBool[PARTY_VOCATION_MULT] = getGlobalBool("enablePartyVocationBonus", false);
-	m_confDouble[TWO_VOCATION_PARTY] = getGlobalDouble("twoVocationExpMultiplier", 1.4);
-	m_confDouble[THREE_VOCATION_PARTY] = getGlobalDouble("threeVocationExpMultiplier", 1.6);
-	m_confDouble[FOUR_VOCATION_PARTY] = getGlobalDouble("fourVocationExpMultiplier", 2.0);
-	m_confString[ADVERTISING_BLOCK] = getGlobalString("advertisingBlock", "");
-	m_confNumber[SPAWN_TIME] = getGlobalNumber("spawnTimeOverride", 0);
-	m_confBool[NO_ATTACKHEALING_SIMULTANEUS] = getGlobalBool("noAttackHealingSimultaneus", false);
-	m_confDouble[BONUS_XP_PREMIUM] = getGlobalDouble("rateBonusPremium", 0);
 	m_confBool[ELF_PROTECTION_TARGET] = getGlobalBool("elfProtectionTarget", false);
-	m_confString[AUTOLOOT_BLOCKIDS] = getGlobalString("AutoLoot_BlockIDs", "");	//autoloot by naze#3578
-	m_confString[AUTOLOOT_MONEYIDS] = getGlobalString("AutoLoot_MoneyIDs", "2148;2152;2160"); //autoloot by naze#3578
-	m_confNumber[AUTOLOOT_MAXITEM] = getGlobalNumber("AutoLoot_MaxItem", 100); //autoloot by naze#3578
-	m_confBool[RARE_SYTEM_ENABLE] = getGlobalBool("rareSystem", false);
-	m_confDouble[RATE_LOOT_RARE] = getGlobalDouble("rateLootRare", 1.0);
-
+	m_confNumber[LOGIN_PROTECTION_TIME] = getGlobalNumber("loginProtectionTime", 10);
+	m_confBool[CLASSIC_EQUIPMENT_SLOTS] = getGlobalBool("classicEquipmentSlots", false);
+	m_confBool[NO_ATTACKHEALING_SIMULTANEUS] = getGlobalBool("noAttackHealingSimultaneus", false);
+	m_confBool[OPTIONAL_PROTECTION] = getGlobalBool("optionalProtection", true);
+	m_confBool[MONSTER_ATTACK_MONSTER] = getGlobalBool("monsterAttacksOnlyDamagePlayers", true);
+	m_confBool[ALLOW_CORPSE_BLOCK] = getGlobalBool("allowCorpseBlock", false);
+	m_confBool[ALLOW_INDEPENDENT_PUSH] = getGlobalBool("allowIndependentCreaturePush", true);
+	m_confBool[PZLOCK_ON_ATTACK_SKULLED_PLAYERS] = getGlobalBool("pzlockOnAttackSkulledPlayers", false);
 	m_loaded = true;
 	return true;
 }

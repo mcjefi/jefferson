@@ -133,11 +133,11 @@ double Container::getWeight() const
 
 std::string Container::getContentDescription() const
 {
-	std::stringstream s;
+	std::ostringstream s;
 	return getContentDescription(s).str();
 }
 
-std::stringstream& Container::getContentDescription(std::stringstream& s) const
+std::ostringstream& Container::getContentDescription(std::ostringstream& s) const
 {
 	bool begin = true;
 	Container* evil = const_cast<Container*>(this);
@@ -256,8 +256,7 @@ void Container::onRemoveContainerItem(uint32_t index, Item* item)
 ReturnValue Container::__queryAdd(int32_t index, const Thing* thing, uint32_t count,
 	uint32_t flags, Creature* actor/* = NULL*/) const
 {
-	bool childIsOwner = hasBitSet(FLAG_CHILDISOWNER, flags);
-	if(childIsOwner)
+	if((flags & FLAG_CHILDISOWNER) == FLAG_CHILDISOWNER)
 	{
 		//a child container is querying, since we are the top container (not carried by a player)
 		//just return with no error.
@@ -283,28 +282,7 @@ ReturnValue Container::__queryAdd(int32_t index, const Thing* thing, uint32_t co
 		}
 	}
 
-	int16_t contador = this->size();
-
-	const Cylinder* cylin = getParent();
-
-	while (cylin && count <= 220)
-	{
-		if (const Item * item = cylin->getItem())
-		{
-			if (const Container * cont = item->getContainer())
-			{
-				contador = contador + cont->size();
-			}
-		}
-		cylin = cylin->getParent();
-	}
-
-	if (contador >= 220)
-	{
-		return RET_CONTAINERFULLITEMS;
-	}
-
-	if(index == INDEX_WHEREEVER && !((flags & FLAG_NOLIMIT) == FLAG_NOLIMIT) && full())
+	if((flags & FLAG_NOLIMIT) != FLAG_NOLIMIT && (index == INDEX_WHEREEVER && size() >= capacity()))
 		return RET_CONTAINERNOTENOUGHROOM;
 
 	const Cylinder* topParent = getTopParent();
@@ -370,7 +348,7 @@ ReturnValue Container::__queryMaxCount(int32_t index, const Thing* thing, uint32
 	else
 	{
 		maxQueryCount = freeSlots;
-		if(maxQueryCount == 0)
+		if(!maxQueryCount)
 			return RET_CONTAINERNOTENOUGHROOM;
 	}
 
@@ -384,10 +362,10 @@ ReturnValue Container::__queryRemove(const Thing* thing, uint32_t count, uint32_
 		return RET_NOTPOSSIBLE;
 
 	const Item* item = thing->getItem();
-	if(item == NULL)
+	if(!item)
 		return RET_NOTPOSSIBLE;
 
-	if(count == 0 || (item->isStackable() && count > item->getItemCount()))
+	if(!count || (item->isStackable() && count > item->getItemCount() && item->getItemCount() != 0))
 		return RET_NOTPOSSIBLE;
 
 	if(!item->isMovable() && !hasBitSet(FLAG_IGNORENOTMOVABLE, flags))
@@ -434,14 +412,14 @@ Cylinder* Container::__queryDestination(int32_t& index, const Thing* thing, Item
 	if(!item)
 		return this;
 
-	if(!((flags & FLAG_IGNOREAUTOSTACK) == FLAG_IGNOREAUTOSTACK)
-		&& item->isStackable() && item->getParent() != this)
+	bool autoStack = !hasBitSet(FLAG_IGNOREAUTOSTACK, flags);
+	if(autoStack && item->isStackable() && item->getParent() != this)
 	{
-		//try to find a suitable item to stack with
+		//try find a suitable item to stack with
 		uint32_t n = itemlist.size();
 		for(ItemList::reverse_iterator cit = itemlist.rbegin(); cit != itemlist.rend(); ++cit, --n)
 		{
-			if((*cit)->getID() == item->getID() && (*cit)->getItemCount() < 100)
+			if((*cit) != item && (*cit)->getID() == item->getID() && (*cit)->getItemCount() < 100)
 			{
 				*destItem = (*cit);
 				index = n;

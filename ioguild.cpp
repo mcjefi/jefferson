@@ -31,98 +31,98 @@ extern ConfigManager g_config;
 bool IOGuild::getGuildId(uint32_t& id, const std::string& name)
 {
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 	query << "SELECT `id` FROM `guilds` WHERE `name` " << db->getStringComparer() << db->escapeString(name) << " AND `world_id` = " << g_config.getNumber(ConfigManager::WORLD_ID) << " LIMIT 1";
 	if(!(result = db->storeQuery(query.str())))
 		return false;
 
 	id = result->getDataInt("id");
-	
+	result->free();
 	return true;
 }
 
 bool IOGuild::getGuildById(std::string& name, uint32_t id)
 {
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 	query << "SELECT `name` FROM `guilds` WHERE `id` = " << id << " AND `world_id` = " << g_config.getNumber(ConfigManager::WORLD_ID) << " LIMIT 1";
 	if(!(result = db->storeQuery(query.str())))
 		return false;
 
 	name = result->getDataString("name");
-	
+	result->free();
 	return true;
 }
 
 bool IOGuild::swapGuildIdToOwner(uint32_t& value)
 {
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 	query << "SELECT `ownerid` FROM `guilds` WHERE `id` = " << value << " AND `world_id` = " << g_config.getNumber(ConfigManager::WORLD_ID) << " LIMIT 1";
 	if(!(result = db->storeQuery(query.str())))
 		return false;
 
 	value = result->getDataInt("ownerid");
-	
+	result->free();
 	return true;
 }
 
 bool IOGuild::guildExists(uint32_t guild)
 {
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 	query << "SELECT `id` FROM `guilds` WHERE `id` = " << guild << " AND `world_id` = " << g_config.getNumber(ConfigManager::WORLD_ID) << " LIMIT 1";
 	if(!(result = db->storeQuery(query.str())))
 		return false;
 
-	
+	result->free();
 	return true;
 }
 
 uint32_t IOGuild::getRankIdByName(uint32_t guild, const std::string& name)
 {
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 	query << "SELECT `id` FROM `guild_ranks` WHERE `guild_id` = " << guild << " AND `name` " << db->getStringComparer() << db->escapeString(name) << " LIMIT 1";
 	if(!(result = db->storeQuery(query.str())))
 		return 0;
 
 	const uint32_t id = result->getDataInt("id");
-	
+	result->free();
 	return id;
 }
 
 uint32_t IOGuild::getRankIdByLevel(uint32_t guild, GuildLevel_t level)
 {
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 	query << "SELECT `id` FROM `guild_ranks` WHERE `guild_id` = " << guild << " AND `level` = " << level << " LIMIT 1";
 	if(!(result = db->storeQuery(query.str())))
 		return 0;
 
 	const uint32_t id = result->getDataInt("id");
-	
+	result->free();
 	return id;
 }
 
 bool IOGuild::getRankEx(uint32_t& id, std::string& name, uint32_t guild, GuildLevel_t level)
 {
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 	query << "SELECT `id`, `name` FROM `guild_ranks` WHERE `guild_id` = " << guild << " AND `level` = " << level;
 	if(id)
 		query << " AND `id` = " << id;
@@ -135,37 +135,37 @@ bool IOGuild::getRankEx(uint32_t& id, std::string& name, uint32_t guild, GuildLe
 	if(!id)
 		id = result->getDataInt("id");
 
-	
+	result->free();
 	return true;
 }
 
 std::string IOGuild::getRank(uint32_t guid)
 {
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 	query << "SELECT `guild_ranks`.`name` FROM `players`, `guild_ranks` WHERE `players`.`id` = " << guid << " AND `guild_ranks`.`id` = `players`.`rank_id` LIMIT 1";
 	if(!(result = db->storeQuery(query.str())))
 		return "";
 
 	const std::string name = result->getDataString("name");
-	
+	result->free();
 	return name;
 }
 
 bool IOGuild::changeRank(uint32_t guild, const std::string& oldName, const std::string& newName)
 {
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 	query << "SELECT `id` FROM `guild_ranks` WHERE `guild_id` = " << guild << " AND `name` " << db->getStringComparer() << db->escapeString(oldName) << " LIMIT 1";
 	if(!(result = db->storeQuery(query.str())))
 		return false;
 
 	const uint32_t id = result->getDataInt("id");
-	
+	result->free();
 
 	query.str("");
 	query << "UPDATE `guild_ranks` SET `name` = " << db->escapeString(newName) << " WHERE `id` = " << id << db->getUpdateLimiter();
@@ -184,9 +184,9 @@ bool IOGuild::changeRank(uint32_t guild, const std::string& oldName, const std::
 bool IOGuild::createGuild(Player* player)
 {
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 	query << "INSERT INTO `guilds` (`id`, `world_id`, `name`, `ownerid`, `creationdata`, `motd`, `checkdata`) VALUES (NULL, " << g_config.getNumber(ConfigManager::WORLD_ID) << ", " << db->escapeString(player->getGuildName()) << ", " << player->getGUID() << ", " << time(NULL) << ", 'Your guild has been successfully created, to view all available commands type: !commands. If you would like to remove this message use !cleanmotd and to set new motd use !setmotd text.', 0)";
 	if(!db->query(query.str()))
 		return false;
@@ -197,22 +197,22 @@ bool IOGuild::createGuild(Player* player)
 		return false;
 
 	const uint32_t guildId = result->getDataInt("id");
-	
+	result->free();
 	return joinGuild(player, guildId, true);
 }
 
 bool IOGuild::joinGuild(Player* player, uint32_t guildId, bool creation/* = false*/)
 {
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 	query << "SELECT `id` FROM `guild_ranks` WHERE `guild_id` = " << guildId << " AND `level` = " << (creation ? "3" : "1") << " LIMIT 1";
 	if(!(result = db->storeQuery(query.str())))
 		return false;
 
 	const uint32_t rankId = result->getDataInt("id");
-	
+	result->free();
 
 	std::string guildName;
 	if(!creation)
@@ -223,7 +223,7 @@ bool IOGuild::joinGuild(Player* player, uint32_t guildId, bool creation/* = fals
 			return false;
 
 		guildName = result->getDataString("name");
-		
+		result->free();
 	}
 
 	query.str("");
@@ -247,7 +247,7 @@ bool IOGuild::disbandGuild(uint32_t guildId)
 {
 	Database* db = Database::getInstance();
 
-	DBQuery query;
+	std::ostringstream query;
 	query << "UPDATE `players` SET `rank_id` = '' AND `guildnick` = '' WHERE `rank_id` = " << getRankIdByLevel(guildId, GUILDLEVEL_LEADER) << " OR rank_id = " << getRankIdByLevel(guildId, GUILDLEVEL_VICE) << " OR rank_id = " << getRankIdByLevel(guildId, GUILDLEVEL_MEMBER);
 	if(!db->query(query.str()))
 		return false;
@@ -280,36 +280,36 @@ bool IOGuild::disbandGuild(uint32_t guildId)
 bool IOGuild::hasGuild(uint32_t guid)
 {
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 	query << "SELECT `rank_id` FROM `players` WHERE `id` = " << guid << " LIMIT 1";
 	if(!(result = db->storeQuery(query.str())))
 		return false;
 
 	const bool ret = result->getDataInt("rank_id") != 0;
-	
+	result->free();
 	return ret;
 }
 
 bool IOGuild::isInvited(uint32_t guild, uint32_t guid)
 {
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 	query << "SELECT `guild_id` FROM `guild_invites` WHERE `player_id` = " << guid << " AND `guild_id`= " << guild << " LIMIT 1";
 	if(!(result = db->storeQuery(query.str())))
 		return false;
 
-	
+	result->free();
 	return true;
 }
 
 bool IOGuild::invitePlayer(uint32_t guild, uint32_t guid)
 {
 	Database* db = Database::getInstance();
-	DBQuery query;
+	std::ostringstream query;
 	query << "INSERT INTO `guild_invites` (`player_id`, `guild_id`) VALUES ('" << guid << "', '" << guild << "')";
 	return db->query(query.str());
 }
@@ -317,7 +317,7 @@ bool IOGuild::invitePlayer(uint32_t guild, uint32_t guid)
 bool IOGuild::revokeInvite(uint32_t guild, uint32_t guid)
 {
 	Database* db = Database::getInstance();
-	DBQuery query;
+	std::ostringstream query;
 	query << "DELETE FROM `guild_invites` WHERE `player_id` = " << guid << " AND `guild_id` = " << guild;
 	return db->query(query.str());
 }
@@ -325,53 +325,53 @@ bool IOGuild::revokeInvite(uint32_t guild, uint32_t guid)
 uint32_t IOGuild::getGuildId(uint32_t guid)
 {
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 	query << "SELECT `guild_ranks`.`guild_id` FROM `players`, `guild_ranks` WHERE `players`.`id` = " << guid << " AND `guild_ranks`.`id` = `players`.`rank_id` LIMIT 1";
 	if(!(result = db->storeQuery(query.str())))
 		return 0;
 
 	const uint32_t guildId = result->getDataInt("guild_id");
-	
+	result->free();
 	return guildId;
 }
 
 GuildLevel_t IOGuild::getGuildLevel(uint32_t guid)
 {
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 	query << "SELECT `guild_ranks`.`level` FROM `players`, `guild_ranks` WHERE `players`.`id` = " << guid << " AND `guild_ranks`.`id` = `players`.`rank_id` LIMIT 1";
 	if(!(result = db->storeQuery(query.str())))
 		return GUILDLEVEL_NONE;
 
 	const GuildLevel_t level = (GuildLevel_t)result->getDataInt("level");
-	
+	result->free();
 	return level;
 }
 
 bool IOGuild::setGuildLevel(uint32_t guid, GuildLevel_t level)
 {
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 	query << "SELECT `id` FROM `guild_ranks` WHERE `guild_id` = " << getGuildId(guid) << " AND `level` = " << level << " LIMIT 1";
 	if(!(result = db->storeQuery(query.str())))
 		return false;
 
 	query.str("");
 	query << "UPDATE `players` SET `rank_id` = " << result->getDataInt("id") << " WHERE `id` = " << guid << db->getUpdateLimiter();
-	
+	result->free();
 	return db->query(query.str());
 }
 
 bool IOGuild::updateOwnerId(uint32_t guild, uint32_t guid)
 {
 	Database* db = Database::getInstance();
-	DBQuery query;
+	std::ostringstream query;
 	query << "UPDATE `guilds` SET `ownerid` = " << guid << " WHERE `id` = " << guild << db->getUpdateLimiter();
 	return db->query(query.str());
 }
@@ -379,7 +379,7 @@ bool IOGuild::updateOwnerId(uint32_t guild, uint32_t guid)
 bool IOGuild::setGuildNick(uint32_t guid, const std::string& nick)
 {
 	Database* db = Database::getInstance();
-	DBQuery query;
+	std::ostringstream query;
 	query << "UPDATE `players` SET `guildnick` = " << db->escapeString(nick) << " WHERE `id` = " << guid << db->getUpdateLimiter();
 	return db->query(query.str());
 }
@@ -387,7 +387,7 @@ bool IOGuild::setGuildNick(uint32_t guid, const std::string& nick)
 bool IOGuild::setMotd(uint32_t guild, const std::string& newMessage)
 {
 	Database* db = Database::getInstance();
-	DBQuery query;
+	std::ostringstream query;
 	query << "UPDATE `guilds` SET `motd` = " << db->escapeString(newMessage) << " WHERE `id` = " << guild << db->getUpdateLimiter();
 	return db->query(query.str());
 }
@@ -395,15 +395,15 @@ bool IOGuild::setMotd(uint32_t guild, const std::string& newMessage)
 std::string IOGuild::getMotd(uint32_t guild)
 {
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 	query << "SELECT `motd` FROM `guilds` WHERE `id` = " << guild << " LIMIT 1";
 	if(!(result = db->storeQuery(query.str())))
 		return "";
 
 	const std::string motd = result->getDataString("motd");
-	
+	result->free();
 	return motd;
 }
 
@@ -413,9 +413,9 @@ void IOGuild::checkWars()
 		return;
 
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 
 	// I don't know if there any easier way to make it right.
 	// If exists other solution just let me know.
@@ -425,7 +425,7 @@ void IOGuild::checkWars()
 	// status 7 means 'mend fences', related to signed an armistice declaration by enemy
 	// status 8 means ended up, when guild ended up war without signed an armistice declaration by enemy
 	// status 9 means signed an armistice declaration by enemy
-	std::stringstream s;
+	std::ostringstream s;
 	uint32_t tmpInterval = (uint32_t) (EVENT_WARSINTERVAL/1000)+10; //+10 for sure
 
 	query << "SELECT `g`.`name` as `guild_name`, `e`.`name` as `enemy_name`, `guild_wars`.`frags` as `frags`  FROM `guild_wars` LEFT JOIN `guilds` as `g` ON `guild_wars`.`guild_id` = `g`.`id` LEFT JOIN `guilds` as `e` ON `guild_wars`.`enemy_id` = `e`.`id` WHERE (`begin` > 0 AND (`begin` + " << tmpInterval << ") > UNIX_TIMESTAMP()) AND `status` IN (0, 6)";
@@ -438,7 +438,7 @@ void IOGuild::checkWars()
 			s.str("");
 		}
 		while(result->next());
-		
+		result->free();
 	}
 
 	query.str("");
@@ -483,7 +483,7 @@ void IOGuild::checkWars()
 			}
 		}
 		while(result->next());
-		
+		result->free();
 	}
 
 	query.str("");
@@ -498,7 +498,7 @@ void IOGuild::checkWars()
 			s.str("");
 		}
 		while(result->next());
-		
+		result->free();
 	}
 
 	query.str("");
@@ -512,7 +512,7 @@ void IOGuild::checkWars()
 			s.str("");
 		}
 		while(result->next());
-		
+		result->free();
 	}
 
 	query.str("");
@@ -555,7 +555,7 @@ void IOGuild::checkWars()
 			s.str("");
 		}
 		while(result->next());
-		
+		result->free();
 	}
 
 	query.str("");
@@ -570,9 +570,9 @@ void IOGuild::checkWars()
 void IOGuild::checkEndingWars()
 {
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 
 	query << "SELECT `id`, `guild_id`, `enemy_id` FROM `guild_wars` WHERE `status` IN (1,4) AND `end` > 0 AND `end` < " << time(NULL);
 	if(!(result = db->storeQuery(query.str())))
@@ -588,15 +588,15 @@ void IOGuild::checkEndingWars()
 	}
 
 	while(result->next());
-	
+	result->free();
 }
 
 bool IOGuild::updateWar(War_t& war)
 {
 	Database* db = Database::getInstance();
-	DBResult_ptr result;
+	DBResult* result;
 
-	DBQuery query;
+	std::ostringstream query;
 	query << "SELECT `g`.`name` AS `guild_name`, `e`.`name` AS `enemy_name`, `w`.* FROM `guild_wars` w LEFT JOIN `guilds` g ON `w`.`guild_id` = `g`.`id` LEFT JOIN `guilds` e ON `w`.`enemy_id` = `e`.`id` WHERE `w`.`id` = " << war.war;
 	if(!(result = db->storeQuery(query.str())))
 		return false;
@@ -613,7 +613,7 @@ bool IOGuild::updateWar(War_t& war)
 	war.limit = result->getDataInt("frags");
 	war.payment = result->getDataInt("payment");
 
-	
+	result->free();
 	if(war.frags[WAR_GUILD] >= war.limit || war.frags[WAR_ENEMY] >= war.limit)
 	{
 		Scheduler::getInstance().addEvent(createSchedulerTask(1000,
@@ -629,7 +629,7 @@ bool IOGuild::updateWar(War_t& war)
 void IOGuild::finishWar(War_t war, bool finished)
 {
 	Database* db = Database::getInstance();
-	DBQuery query;
+	std::ostringstream query;
 	if(finished)
 	{
 		query << "UPDATE `guilds` SET `balance` = `balance` + " << (war.payment << 1) << " WHERE `id` = " << war.ids[war.type];
@@ -670,7 +670,7 @@ void IOGuild::finishWar(War_t war, bool finished)
 
 	if(finished)
 	{
-		std::stringstream s;
+		std::ostringstream s;
 		s << war.names[war.type] << " has just won the war against " << war.names[war.type == WAR_GUILD] << ".";
 		g_game.broadcastMessage(s.str().c_str(), MSG_EVENT_ADVANCE);
 	}
@@ -679,7 +679,7 @@ void IOGuild::finishWar(War_t war, bool finished)
 void IOGuild::frag(Player* player, uint64_t deathId, const DeathList& list, bool score)
 {
 	War_t war;
-	std::stringstream s;
+	std::ostringstream s;
 	for(DeathList::const_iterator it = list.begin(); it != list.end(); )
 	{
 		if(score)
@@ -739,9 +739,25 @@ void IOGuild::frag(Player* player, uint64_t deathId, const DeathList& list, bool
 	}
 
 	Database* db = Database::getInstance();
-	DBQuery query;
+	std::ostringstream query;
 
 	query << "INSERT INTO `guild_kills` (`guild_id`, `war_id`, `death_id`) VALUES ("
 		<< war.ids[war.type] << ", " << war.war << ", " << deathId << ");";
 	db->query(query.str());
+}
+
+bool IOGuild::getGGNWin(uint32_t& value)
+{
+	Database* db = Database::getInstance();
+	DBResult* result;
+	
+	std::ostringstream query;
+
+	query << "SELECT `guild_id` FROM `guilds_ggn` ORDER BY date DESC LIMIT 1";
+	if(!(result = db->storeQuery(query.str())))
+		return false;
+
+	value = result->getDataInt("guild_id");
+	
+	return true;
 }

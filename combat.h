@@ -79,6 +79,8 @@ struct CombatParams
 		combatType = COMBAT_NONE;
 		itemId = 0;
 
+		origin = ORIGIN_NONE;
+
 		targetCallback = NULL;
 		valueCallback = NULL;
 		tileCallback = NULL;
@@ -88,6 +90,8 @@ struct CombatParams
 	ConditionType_t dispelType;
 	CombatType_t combatType, elementType;
 	uint32_t itemId, elementDamage;
+
+	Origin_t origin;
 
 	TargetCallback* targetCallback;
 	ValueCallback* valueCallback;

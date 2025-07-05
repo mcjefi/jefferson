@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////////////////////////////////////////////////////////////////////////
+
 #include "otpch.h"
 #include <iomanip>
 
@@ -374,7 +375,7 @@ void Map::getSpectatorsInternal(SpectatorVec& list, const Position& centerPos, i
 							continue;
 						}
 
-						int_fast16_t offsetZ = static_cast<int_fast16_t>(centerPos.z) - static_cast<int_fast16_t>(cpos.z);
+						int_fast16_t offsetZ = Position::getOffsetZ(centerPos, cpos);
 						if (cpos.y < (min_y + offsetZ) || cpos.y > (max_y + offsetZ)) {
 							continue;
 						}
@@ -404,71 +405,6 @@ void Map::getSpectatorsInternal(SpectatorVec& list, const Position& centerPos, i
 //	int32_t minRangeX /*= 0*/, int32_t maxRangeX /*= 0*/, int32_t minRangeY /*= 0*/, int32_t maxRangeY /*= 0*/)
 void Map::getSpectators(SpectatorVec& list, const Position& centerPos, bool multifloor /*= false*/, bool onlyPlayers /*= false*/, int32_t minRangeX /*= 0*/, int32_t maxRangeX /*= 0*/, int32_t minRangeY /*= 0*/, int32_t maxRangeY /*= 0*/)
 {
-	/*
-
-	if(centerPos.z >= MAP_MAX_LAYERS)
-		return;
-
-	bool foundCache = false, cacheResult = false;
-	if(!minRangeX && !maxRangeX && !minRangeY && !maxRangeY && multifloor && !checkforduplicate && !onlyPlayers)
-	{
-		SpectatorCache::iterator it = spectatorCache.find(centerPos);
-		if(it != spectatorCache.end())
-		{
-			list = *it->second;
-			foundCache = true;
-		}
-		else
-			cacheResult = true;
-	}
-
-	if(!foundCache)
-	{
-		minRangeX = (!minRangeX ? -maxViewportX : -minRangeX);
-		maxRangeX = (!maxRangeX ? maxViewportX : maxRangeX);
-		minRangeY = (!minRangeY ? -maxViewportY : -minRangeY);
-		maxRangeY = (!maxRangeY ? maxViewportY : maxRangeY);
-
-		int32_t minRangeZ, maxRangeZ;
-		if(multifloor)
-		{
-			if(centerPos.z > 7)
-			{
-				//underground, 8->15
-				minRangeZ = std::max(centerPos.z - 2, 0);
-				maxRangeZ = std::min(centerPos.z + 2, MAP_MAX_LAYERS - 1);
-			}
-			//above ground
-			else if(centerPos.z == 6)
-			{
-				minRangeZ = 0;
-				maxRangeZ = 8;
-			}
-			else if(centerPos.z == 7)
-			{
-				minRangeZ = 0;
-				maxRangeZ = 9;
-			}
-			else
-			{
-				minRangeZ = 0;
-				maxRangeZ = 7;
-			}
-		}
-		else
-		{
-			minRangeZ = centerPos.z;
-			maxRangeZ = centerPos.z;
-		}
-
-		getSpectatorsInternal(list, centerPos, true, onlyPlayers, minRangeX,
-			maxRangeX, minRangeY, maxRangeY, minRangeZ, maxRangeZ);
-
-		if(cacheResult && !onlyPlayers)
-			spectatorCache[centerPos].reset(new SpectatorVec(list));
-	}
-	*/
-
 	if (centerPos.z >= MAP_MAX_LAYERS) {
 		return;
 	}
@@ -559,54 +495,6 @@ void Map::getSpectators(SpectatorVec& list, const Position& centerPos, bool mult
 		}
 	}
 }
-
-/*
-const SpectatorVec& Map::getSpectators(const Position& centerPos)
-{
-	if(centerPos.z >= MAP_MAX_LAYERS)
-	{
-		boost::shared_ptr<SpectatorVec> p(new SpectatorVec());
-		SpectatorVec& list = *p;
-		return list;
-	}
-
-	SpectatorCache::iterator it = spectatorCache.find(centerPos);
-	if(it != spectatorCache.end())
-		return *it->second;
-
-	boost::shared_ptr<SpectatorVec> p(new SpectatorVec());
-	spectatorCache[centerPos] = p;
-	SpectatorVec& list = *p;
-
-	int32_t minRangeX = -maxViewportX, maxRangeX = maxViewportX, minRangeY = -maxViewportY,
-		maxRangeY = maxViewportY, minRangeZ, maxRangeZ;
-	if(centerPos.z > 7)
-	{
-		//underground, 8->15
-		minRangeZ = std::max(centerPos.z - 2, 0);
-		maxRangeZ = std::min(centerPos.z + 2, MAP_MAX_LAYERS - 1);
-	}
-	//above ground
-	else if(centerPos.z == 6)
-	{
-		minRangeZ = 0;
-		maxRangeZ = 8;
-	}
-	else if(centerPos.z == 7)
-	{
-		minRangeZ = 0;
-		maxRangeZ = 9;
-	}
-	else
-	{
-		minRangeZ = 0;
-		maxRangeZ = 7;
-	}
-
-	getSpectatorsInternal(list, centerPos, false, false, minRangeX, maxRangeX, minRangeY, maxRangeY, minRangeZ, maxRangeZ);
-	return list;
-}
-*/
 
 bool Map::canThrowObjectTo(const Position& fromPos, const Position& toPos, bool checkLineOfSight /*= true*/,
 	int32_t rangex /*= Map::maxClientViewportX*/, int32_t rangey /*= Map::maxClientViewportY*/)

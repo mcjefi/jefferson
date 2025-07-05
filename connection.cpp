@@ -1,21 +1,19 @@
-/**
- * The Forgotten Server - a free and open-source MMORPG server emulator
- * Copyright (C) 2016  Mark Samman <mark.samman@gmail.com>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- */
+////////////////////////////////////////////////////////////////////////
+// OpenTibia - an opensource roleplaying game
+////////////////////////////////////////////////////////////////////////
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+////////////////////////////////////////////////////////////////////////
 
 #include "otpch.h"
 
@@ -25,6 +23,7 @@
 #include "protocol.h"
 #include "scheduler.h"
 #include "server.h"
+
 
 extern ConfigManager g_config;
 
@@ -48,11 +47,11 @@ bool ConnectionManager::acceptConnection(uint32_t clientip)
 
 	int64_t timeDiff = currentTime - connectBlock.lastAttempt;
 	connectBlock.lastAttempt = currentTime;
-	if (timeDiff <= 10) {
+	if (timeDiff <= 5000) {
 		if (++connectBlock.count > 5) {
 			connectBlock.count = 0;
-			if (timeDiff <= 50) {
-				connectBlock.blockTime = currentTime + 10;
+			if (timeDiff <= 500) {
+				connectBlock.blockTime = currentTime + 3000;
 				return false;
 			}
 		}
@@ -176,8 +175,8 @@ void Connection::parseHeader(const boost::system::error_code& error)
 	}
 
 	uint32_t timePassed = std::max<uint32_t>(1, (time(nullptr) - timeConnected) + 1);
-	if ((++packetsSent / timePassed) > static_cast<uint32_t>(g_config.getNumber(ConfigManager::PACKETS_PER_SECOND))) {
-		std::cout << convertIPAddress(getIP()) << " disconnected for exceeding packet per second limit." << std::endl;
+	if ((++packetsSent / timePassed) > static_cast<uint32_t>(g_config.getNumber(ConfigManager::MAX_PACKETS_PER_SECOND))) {
+		std::cout << convertIPAddress(getIP()) << " disconnected for exceeding packet per second limit, increase 'packetsPerSecond' on config.lua to prevent this." << std::endl;
 		close();
 		return;
 	}
@@ -345,4 +344,3 @@ void Connection::handleTimeout(ConnectionWeak_ptr connectionWeak, const boost::s
 		connection->close(FORCE_CLOSE);
 	}
 }
-

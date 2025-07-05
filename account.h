@@ -47,6 +47,5 @@ class Account
 		uint32_t number, lastDay;
 		std::string name, password, recoveryKey, salt;
 		Characters charList;
-		LocalizationLang_t language;
 };
 #endif

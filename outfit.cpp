@@ -61,12 +61,6 @@ bool Outfits::parseOutfitNode(xmlNodePtr p)
 
 	if(readXMLInteger(p, "access", intValue))
 		newOutfit.accessLevel = intValue;
-	
-	if(readXMLInteger(p, "voc", intValue))
-		newOutfit.vocation = intValue;
-	
-	if(readXMLInteger(p, "lvl", intValue))
-		newOutfit.level = intValue;
 
 	if(readXMLString(p, "group", strValue) || readXMLString(p, "groups", strValue))
 	{
