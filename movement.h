@@ -58,8 +58,8 @@ class MoveEvents : public BaseEvents
 		virtual ~MoveEvents() {clear();}
 
 		uint32_t onCreatureMove(Creature* actor, Creature* creature, const Tile* fromTile, const Tile* toTile, bool isStepping);
-		bool onPlayerEquip(Player* player, Item* item, slots_t slot, bool isCheck);
-		bool onPlayerDeEquip(Player* player, Item* item, slots_t slot, bool isRemoval);
+		bool onPlayerEquip(Player* player, Item* item, slots_t slot, bool isCheck, bool isLogin);
+		bool onPlayerDeEquip(Player* player, Item* item, slots_t slot, bool isRemoval, bool isLogout);
 		uint32_t onItemMove(Creature* actor, Item* item, Tile* tile, bool isAdd);
 
 		MoveEvent* getEvent(Item* item, uint16_t uniqueId, uint16_t actionId, MoveEvent_t eventType);
@@ -109,7 +109,7 @@ class MoveEvents : public BaseEvents
 
 typedef uint32_t (MoveFunction)(Item* item);
 typedef uint32_t (StepFunction)(Creature* creature, Item* item);
-typedef bool (EquipFunction)(MoveEvent* moveEvent, Player* player, Item* item, slots_t slot, bool boolean);
+typedef bool (EquipFunction)(MoveEvent* moveEvent, Player* player, Item* item, slots_t slot, bool boolean, bool isLogInOut);
 
 class MoveEvent : public Event
 {
@@ -126,10 +126,10 @@ class MoveEvent : public Event
 
 		uint32_t fireStepEvent(Creature* actor, Creature* creature, Item* item, const Position& pos, const Position& fromPos, const Position& toPos);
 		uint32_t fireAddRemItem(Creature* actor, Item* item, Item* tileItem, const Position& pos);
-		bool fireEquip(Player* player, Item* item, slots_t slot, bool boolean);
+		bool fireEquip(Player* player, Item* item, slots_t slot, bool boolean, bool isLogInOut);
 
 		uint32_t executeStep(Creature* actor, Creature* creature, Item* item, const Position& pos, const Position& fromPos, const Position& toPos);
-		bool executeEquip(Player* player, Item* item, slots_t slot, bool boolean);
+		bool executeEquip(Player* player, Item* item, slots_t slot, bool boolean, bool isLogInOut);
 		uint32_t executeAddRemItem(Creature* actor, Item* item, Item* tileItem, const Position& pos);
 
 		static StepFunction StepInField;
@@ -142,7 +142,6 @@ class MoveEvent : public Event
 		int32_t getReqLevel() const {return reqLevel;}
 		int32_t getReqMagLv() const {return reqMagLevel;}
 		bool isPremium() const {return premium;}
-		bool isUniqueItem() const {return uniqueItem;}
 
 		const VocationMap& getVocEquipMap() const {return vocEquipMap;}
 		const std::string& getVocationString() const {return vocationString;}
@@ -159,7 +158,7 @@ class MoveEvent : public Event
 
 		uint32_t wieldInfo, slot;
 		int32_t reqLevel, reqMagLevel;
-		bool premium, uniqueItem;
+		bool premium;
 
 		VocationMap vocEquipMap;
 		std::string vocationString;

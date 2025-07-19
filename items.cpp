@@ -26,7 +26,7 @@
 #include "weapons.h"
 #include "spells.h"
 
-#include "resources.h"
+
 
 extern Spells* g_spells;
 extern ConfigManager g_config;
@@ -106,11 +106,6 @@ ItemType::ItemType()
 
 	levelDoor = 0;
 	specialDoor = closingDoor = false;
-	
-	
-	// Wonsr
-	
-	rareSystemR = rareSystemE = rareSystemL = 0;
 
 	memset(floorChange, 0, sizeof(floorChange));
 }
@@ -286,8 +281,8 @@ int32_t Items::loadFromOtb(std::string file)
 					if(!props.getShort(serverId))
 						return ERROR_INVALID_FORMAT;
 
-					if(serverId > 20000 && serverId < 20100)
-						serverId = serverId - 20000;
+					if(serverId > 30000 && serverId < 30100)
+						serverId = serverId - 30000;
 					else if(lastId > 99 && lastId != serverId - 1)
 					{
 						static ItemType dummyItemType;
@@ -385,7 +380,7 @@ int32_t Items::loadFromOtb(std::string file)
 
 		// store the found item
 		items.addElement(iType, iType->id);
-		if(iType->clientId) {
+		if (iType->clientId) {
 			if (reverseItemMap.find(iType->clientId) == reverseItemMap.end())
 				reverseItemMap[iType->clientId] = iType->id;
 		}
@@ -550,9 +545,9 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 {
 	int32_t intValue;
 	std::string strValue;
-	if(id > 20000 && id < 20100)
+	if(id > 30000 && id < 30100)
 	{
-		id -= 20000;
+		id -= 30000;
 		ItemType* iType = new ItemType();
 
 		iType->id = id;
@@ -743,7 +738,6 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 			if(readXMLInteger(itemAttributesNode, "value", intValue))
 				it.criticalHitChance = intValue;
 		}
-		
 		else if(tmpStrValue == "attack")
 		{
 			if(readXMLInteger(itemAttributesNode, "value", intValue))
@@ -1041,21 +1035,6 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 					std::clog << "[Warning - Items::loadFromXml] Unknown slotType " << strValue << std::endl;
 			}
 		}
-		else if(tmpStrValue == "raresystem")
-		{   
-			if(readXMLInteger(itemAttributesNode, "rare", intValue))
-			{
-				it.rareSystemR = intValue;
-			}
-			if(readXMLInteger(itemAttributesNode, "epic", intValue))
-			{
-				it.rareSystemE = intValue;
-			}
-			if(readXMLInteger(itemAttributesNode, "legend", intValue))
-			{
-				it.rareSystemL = intValue;
-			}
-		}
 		else if(tmpStrValue == "ammotype")
 		{
 			if(readXMLString(itemAttributesNode, "value", strValue))
@@ -1335,106 +1314,6 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 			if(readXMLInteger(itemAttributesNode, "value", intValue))
 				it.getAbilities()->fieldAbsorb[COMBAT_EARTHDAMAGE] += intValue;
 		}
-		// else if(tmpStrValue == "fieldabsorbpercentsuiton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_SUITONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "fieldabsorbpercentfuuton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-			// it.getAbilities()->fieldAbsorb[COMBAT_FUUTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "fieldabsorbpercentdoton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_DOTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "fieldabsorbpercentraiton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_RAITONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "fieldabsorbpercentmokuton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_MOKUTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "fieldabsorbpercentshoton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_SHOTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "fieldabsorbpercentsuna")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_SUNADAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "fieldabsorbpercententon")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_ENTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "fieldabsorbpercenthyoton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_HYOTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "fieldabsorbpercentyoton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_YOTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "fieldabsorbpercentranton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_RANTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "fieldabsorbpercentbakuton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_BAKUTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "fieldabsorbpercentshakuton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_SHAKUTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "fieldabsorbpercentfutton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_FUTTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "fieldabsorbpercentjinton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_JINTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "fieldabsorbpercentsatetsu")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_SATETSUDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "fieldabsorbpercenttaijutsu")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_TAIJUTSUDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "fieldabsorbpercentyin")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_YINDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "fieldabsorbpercentyang")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_YANGDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "fieldabsorbpercentkenjutsu")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_KENJUTSUDAMAGE] += intValue;
-		// }
 		else if(tmpStrValue == "absorbpercentall")
 		{
 			if(readXMLInteger(itemAttributesNode, "value", intValue))
@@ -1451,27 +1330,6 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 				it.getAbilities()->absorb[COMBAT_FIREDAMAGE] += intValue;
 				it.getAbilities()->absorb[COMBAT_EARTHDAMAGE] += intValue;
 				it.getAbilities()->absorb[COMBAT_ICEDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_SUITONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_FUUTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_DOTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_RAITONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_MOKUTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_SHOTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_SUNADAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_ENTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_HYOTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_YOTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_RANTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_BAKUTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_SHAKUTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_FUTTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_JINTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_SATETSUDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_TAIJUTSUDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_YINDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_YANGDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_KENJUTSUDAMAGE] += intValue;
-				
 			}
 		}
 		else if(tmpStrValue == "absorbpercentmagic")
@@ -1484,26 +1342,6 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 				it.getAbilities()->absorb[COMBAT_ICEDAMAGE] += intValue;
 				it.getAbilities()->absorb[COMBAT_HOLYDAMAGE] += intValue;
 				it.getAbilities()->absorb[COMBAT_DEATHDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_SUITONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_FUUTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_DOTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_RAITONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_MOKUTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_SHOTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_SUNADAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_ENTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_HYOTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_YOTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_RANTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_BAKUTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_SHAKUTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_FUTTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_JINTONDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_SATETSUDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_TAIJUTSUDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_YINDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_YANGDAMAGE] += intValue;
-				// it.getAbilities()->absorb[COMBAT_KENJUTSUDAMAGE] += intValue;
 			}
 		}
 		else if(tmpStrValue == "absorbpercentenergy")
@@ -1566,106 +1404,6 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 			if(readXMLInteger(itemAttributesNode, "value", intValue))
 				it.getAbilities()->absorb[COMBAT_UNDEFINEDDAMAGE] += intValue;
 		}
-		// else if(tmpStrValue == "absorbpercentsuiton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_SUITONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "absorbpercentfuuton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-			// it.getAbilities()->fieldAbsorb[COMBAT_FUUTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "absorbpercentdoton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_DOTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "absorbpercentraiton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_RAITONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "absorbpercentmokuton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_MOKUTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "absorbpercentshoton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_SHOTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "absorbpercentsuna")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_SUNADAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "absorbpercententon")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_ENTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "absorbpercenthyoton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_HYOTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "absorbpercentyoton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_YOTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "absorbpercentranton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_RANTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "absorbpercentbakuton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_BAKUTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "absorbpercentshakuton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_SHAKUTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "absorbpercentfutton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_FUTTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "absorbpercentjinton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_JINTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "absorbpercentsatetsu")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_SATETSUDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "absorbpercenttaijutsu")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_TAIJUTSUDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "absorbpercentyin")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_YINDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "absorbpercentyang")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_YANGDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "absorbpercentkenjutsu")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->fieldAbsorb[COMBAT_KENJUTSUDAMAGE] += intValue;
-		// }
 #ifndef _MSC_VER
 		else if(tmpStrValue == "reflectpercentall")
 #else
@@ -1692,27 +1430,6 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 				it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_FIREDAMAGE] += intValue;
 				it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_EARTHDAMAGE] += intValue;
 				it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_ICEDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_SUITONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_FUUTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_DOTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_RAITONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_MOKUTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_SHOTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_SUNADAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_ENTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_HYOTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_YOTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_RANTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_BAKUTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_SHAKUTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_FUTTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_JINTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_SATETSUDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_TAIJUTSUDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_YINDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_YANGDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_KENJUTSUDAMAGE] += intValue;
-				
 			}
 		}
 		else if(tmpStrValue == "reflectpercentmagic")
@@ -1725,26 +1442,6 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 				it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_ICEDAMAGE] += intValue;
 				it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_HOLYDAMAGE] += intValue;
 				it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_DEATHDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_SUITONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_FUUTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_DOTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_RAITONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_MOKUTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_SHOTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_SUNADAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_ENTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_HYOTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_YOTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_RANTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_BAKUTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_SHAKUTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_FUTTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_JINTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_SATETSUDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_TAIJUTSUDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_YINDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_YANGDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_KENJUTSUDAMAGE] += intValue;
 			}
 		}
 		else if(tmpStrValue == "reflectpercentenergy")
@@ -1752,112 +1449,12 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 			if(readXMLInteger(itemAttributesNode, "value", intValue))
 				it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_ENERGYDAMAGE] += intValue;
 		}
-		// else if(tmpStrValue == "reflectpercentsuiton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_SUITONDAMAGE] += intValue;
-		// }
-				// else if(tmpStrValue == "reflectpercentfuuton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-			// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_FUUTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectpercentdoton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_DOTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectpercentraiton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_RAITONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectpercentmokuton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_MOKUTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectpercentshoton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_SHOTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectpercentsuna")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_SUNADAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectpercententon")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_ENTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectpercenthyoton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_HYOTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectpercentyoton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_YOTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectpercentranton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_RANTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectpercentbakuton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_BAKUTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectpercentshakuton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_SHAKUTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectpercentfutton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_FUTTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectpercentjinton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_JINTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectpercentsatetsu")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_SATETSUDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectpercenttaijutsu")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_TAIJUTSUDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectpercentyin")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_YINDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectpercentyang")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_YANGDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectpercentkenjutsu")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_KENJUTSUDAMAGE] += intValue;
-		// }
 		else if(tmpStrValue == "reflectpercentfire")
 		{
 			if(readXMLInteger(itemAttributesNode, "value", intValue))
 				it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_FIREDAMAGE] += intValue;
 		}
-		else if(tmpStrValue == "reflectpercentpoison" ||	tmpStrValue == "reflectpercentearth")
+		else if(tmpStrValue == "reflectpercentpoison" || tmpStrValue == "reflectpercentearth")
 		{
 			if(readXMLInteger(itemAttributesNode, "value", intValue))
 				it.getAbilities()->reflect[REFLECT_PERCENT][COMBAT_EARTHDAMAGE] += intValue;
@@ -1923,26 +1520,6 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 				it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_FIREDAMAGE] += intValue;
 				it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_EARTHDAMAGE] += intValue;
 				it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_ICEDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_SUITONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_FUUTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_DOTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_RAITONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_MOKUTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_SHOTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_SUNADAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_ENTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_HYOTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_YOTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_RANTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_BAKUTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_SHAKUTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_FUTTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_JINTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_SATETSUDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_TAIJUTSUDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_YINDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_YANGDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_KENJUTSUDAMAGE] += intValue;
 			}
 		}
 		else if(tmpStrValue == "reflectchancemagic")
@@ -1955,26 +1532,6 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 				it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_ICEDAMAGE] += intValue;
 				it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_HOLYDAMAGE] += intValue;
 				it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_DEATHDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_SUITONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_FUUTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_DOTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_RAITONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_MOKUTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_SHOTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_SUNADAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_ENTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_HYOTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_YOTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_RANTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_BAKUTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_SHAKUTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_FUTTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_JINTONDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_SATETSUDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_TAIJUTSUDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_YINDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_YANGDAMAGE] += intValue;
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_KENJUTSUDAMAGE] += intValue;
 			}
 		}
 		else if(tmpStrValue == "reflectchanceenergy")
@@ -1987,106 +1544,6 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 			if(readXMLInteger(itemAttributesNode, "value", intValue))
 				it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_FIREDAMAGE] += intValue;
 		}
-		// else if(tmpStrValue == "reflectchancesuiton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_SUITONDAMAGE] += intValue;
-		// }
-				// else if(tmpStrValue == "reflectchancefuuton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-			// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_FUUTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectchancedoton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_DOTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectchanceraiton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_RAITONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectchancemokuton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_MOKUTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectchanceshoton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_SHOTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectchancesuna")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_SUNADAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectchanceenton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_ENTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectchancehyoton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_HYOTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectchanceyoton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_YOTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectchanceranton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_RANTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectchancebakuton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_BAKUTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectchanceshakuton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_SHAKUTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectchancefutton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_FUTTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectchancejinton")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_JINTONDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectchancesatetsu")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_SATETSUDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectchancetaijutsu")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_TAIJUTSUDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectchanceyin")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_YINDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectchanceyang")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_YANGDAMAGE] += intValue;
-		// }
-		// else if(tmpStrValue == "reflectchancekenjutsu")
-		// {
-			// if(readXMLInteger(itemAttributesNode, "value", intValue))
-				// it.getAbilities()->reflect[REFLECT_CHANCE][COMBAT_KENJUTSUDAMAGE] += intValue;
-		// }
 		else if(tmpStrValue == "reflectchancepoison" ||	tmpStrValue == "reflectchanceearth")
 		{
 			if(readXMLInteger(itemAttributesNode, "value", intValue))
@@ -2247,106 +1704,6 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
 				it.getAbilities()->conditionSuppressions |= CONDITION_MANASHIELD;
 		}
-		else if(tmpStrValue == "suppresssuiton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
-				it.getAbilities()->conditionSuppressions |= CONDITION_SUITON;
-		}
-		else if(tmpStrValue == "suppressfuuton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
-				it.getAbilities()->conditionSuppressions |= CONDITION_FUUTON;
-		}
-		else if(tmpStrValue == "suppressdoton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
-				it.getAbilities()->conditionSuppressions |= CONDITION_DOTON;
-		}
-		else if(tmpStrValue == "suppressraiton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
-				it.getAbilities()->conditionSuppressions |= CONDITION_RAITON;
-		}
-		else if(tmpStrValue == "suppressmokuton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
-				it.getAbilities()->conditionSuppressions |= CONDITION_MOKUTON;
-		}
-		else if(tmpStrValue == "suppressshoton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
-				it.getAbilities()->conditionSuppressions |= CONDITION_SHOTON;
-		}
-		else if(tmpStrValue == "suppresssuna")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
-				it.getAbilities()->conditionSuppressions |= CONDITION_SUNA;
-		}
-		else if(tmpStrValue == "suppressenton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
-				it.getAbilities()->conditionSuppressions |= CONDITION_ENTON;
-		}
-		else if(tmpStrValue == "suppreshyoton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
-				it.getAbilities()->conditionSuppressions |= CONDITION_HYOTON;
-		}
-		else if(tmpStrValue == "suppresyoton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
-				it.getAbilities()->conditionSuppressions |= CONDITION_YOTON;
-		}
-		else if(tmpStrValue == "suppresranton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
-				it.getAbilities()->conditionSuppressions |= CONDITION_RANTON;
-		}
-		else if(tmpStrValue == "suppresbakuton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
-				it.getAbilities()->conditionSuppressions |= CONDITION_BAKUTON;
-		}
-		else if(tmpStrValue == "suppresshakuton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
-				it.getAbilities()->conditionSuppressions |= CONDITION_SHAKUTON;
-		}
-		else if(tmpStrValue == "suppresfutton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
-				it.getAbilities()->conditionSuppressions |= CONDITION_FUTTON;
-		}
-		else if(tmpStrValue == "suppresjinton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
-				it.getAbilities()->conditionSuppressions |= CONDITION_JINTON;
-		}
-		else if(tmpStrValue == "suppressatetsu")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
-				it.getAbilities()->conditionSuppressions |= CONDITION_SATETSU;
-		}
-		else if(tmpStrValue == "supprestaijutsu")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
-				it.getAbilities()->conditionSuppressions |= CONDITION_TAIJUTSU;
-		}
-		else if(tmpStrValue == "suppresyin")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
-				it.getAbilities()->conditionSuppressions |= CONDITION_YIN;
-		}
-		else if(tmpStrValue == "suppresyang")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
-				it.getAbilities()->conditionSuppressions |= CONDITION_YANG;
-		}
-		else if(tmpStrValue == "suppreskenjutsu")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue) && intValue != 0)
-				it.getAbilities()->conditionSuppressions |= CONDITION_KENJUTSU;
-		}
 		else if(tmpStrValue == "field")
 		{
 			it.group = ITEM_GROUP_MAGICFIELD;
@@ -2361,106 +1718,6 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 				{
 					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_FIRE, false, 0);
 					combatType = COMBAT_FIREDAMAGE;
-				}
-				else if(tmpStrValue == "suiton")
-				{
-					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_SUITON, false, 0);
-					combatType = COMBAT_SUITONDAMAGE;
-				}
-				else if(tmpStrValue == "fuuton")
-				{
-					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_FUUTON, false, 0);
-					combatType = COMBAT_FUUTONDAMAGE;
-				}
-				else if(tmpStrValue == "doton")
-				{
-					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_DOTON, false, 0);
-					combatType = COMBAT_DOTONDAMAGE;
-				}
-				else if(tmpStrValue == "raiton")
-				{
-					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_RAITON, false, 0);
-					combatType = COMBAT_RAITONDAMAGE;
-				}
-				else if(tmpStrValue == "mokuton")
-				{
-					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_MOKUTON, false, 0);
-					combatType = COMBAT_MOKUTONDAMAGE;
-				}
-				else if(tmpStrValue == "shoton")
-				{
-					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_SHOTON, false, 0);
-					combatType = COMBAT_SHOTONDAMAGE;
-				}
-				else if(tmpStrValue == "suna")
-				{
-					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_SUNA, false, 0);
-					combatType = COMBAT_SUNADAMAGE;
-				}
-				else if(tmpStrValue == "enton")
-				{
-					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_ENTON, false, 0);
-					combatType = COMBAT_ENTONDAMAGE;
-				}
-				else if(tmpStrValue == "hyoton")
-				{
-					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_HYOTON, false, 0);
-					combatType = COMBAT_HYOTONDAMAGE;
-				}
-				else if(tmpStrValue == "yoton")
-				{
-					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_YOTON, false, 0);
-					combatType = COMBAT_YOTONDAMAGE;
-				}
-				else if(tmpStrValue == "ranton")
-				{
-					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_RANTON, false, 0);
-					combatType = COMBAT_RANTONDAMAGE;
-				}
-				else if(tmpStrValue == "bakuton")
-				{
-					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_BAKUTON, false, 0);
-					combatType = COMBAT_BAKUTONDAMAGE;
-				}
-				else if(tmpStrValue == "shakuton")
-				{
-					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_SHAKUTON, false, 0);
-					combatType = COMBAT_SHAKUTONDAMAGE;
-				}
-				else if(tmpStrValue == "futton")
-				{
-					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_FUTTON, false, 0);
-					combatType = COMBAT_FUTTONDAMAGE;
-				}
-				else if(tmpStrValue == "jinton")
-				{
-					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_JINTON, false, 0);
-					combatType = COMBAT_JINTONDAMAGE;
-				}
-				else if(tmpStrValue == "satetsu")
-				{
-					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_SATETSU, false, 0);
-					combatType = COMBAT_SATETSUDAMAGE;
-				}
-				else if(tmpStrValue == "taijutsu")
-				{
-					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_TAIJUTSU, false, 0);
-					combatType = COMBAT_TAIJUTSUDAMAGE;
-				}
-				else if(tmpStrValue == "yin")
-				{
-					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_YIN, false, 0);
-					combatType = COMBAT_YINDAMAGE;
-				}
-				else if(tmpStrValue == "yang")
-				{
-					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_YANG, false, 0);
-					combatType = COMBAT_YANGDAMAGE;
-				}
-				else if(tmpStrValue == "kenjutsu")
-				{
-					conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_KENJUTSU, false, 0);
-					combatType = COMBAT_KENJUTSUDAMAGE;
 				}
 				else if(tmpStrValue == "energy")
 				{
@@ -2563,166 +1820,6 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 			{
 				it.getAbilities()->elementDamage = intValue;
 				it.getAbilities()->elementType = COMBAT_PHYSICALDAMAGE;
-			}
-		}
-		else if(tmpStrValue == "elementsuiton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue))
-			{
-				it.getAbilities()->elementDamage = intValue;
-				it.getAbilities()->elementType = COMBAT_SUITONDAMAGE;
-			}
-		}
-		else if(tmpStrValue == "elementfuuton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue))
-			{
-				it.getAbilities()->elementDamage = intValue;
-				it.getAbilities()->elementType = COMBAT_FUUTONDAMAGE;
-			}
-		}
-		else if(tmpStrValue == "elementdoton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue))
-			{
-				it.getAbilities()->elementDamage = intValue;
-				it.getAbilities()->elementType = COMBAT_DOTONDAMAGE;
-			}
-		}
-		else if(tmpStrValue == "elementraiton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue))
-			{
-				it.getAbilities()->elementDamage = intValue;
-				it.getAbilities()->elementType = COMBAT_RAITONDAMAGE;
-			}
-		}
-		else if(tmpStrValue == "elementmokuton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue))
-			{
-				it.getAbilities()->elementDamage = intValue;
-				it.getAbilities()->elementType = COMBAT_MOKUTONDAMAGE;
-			}
-		}
-		else if(tmpStrValue == "elementshoton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue))
-			{
-				it.getAbilities()->elementDamage = intValue;
-				it.getAbilities()->elementType = COMBAT_SHOTONDAMAGE;
-			}
-		}
-		else if(tmpStrValue == "elementsuna")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue))
-			{
-				it.getAbilities()->elementDamage = intValue;
-				it.getAbilities()->elementType = COMBAT_SUNADAMAGE;
-			}
-		}
-		else if(tmpStrValue == "elemententon")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue))
-			{
-				it.getAbilities()->elementDamage = intValue;
-				it.getAbilities()->elementType = COMBAT_ENTONDAMAGE;
-			}
-		}
-		else if(tmpStrValue == "elementhyoton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue))
-			{
-				it.getAbilities()->elementDamage = intValue;
-				it.getAbilities()->elementType = COMBAT_HYOTONDAMAGE;
-			}
-		}
-		else if(tmpStrValue == "elementyoton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue))
-			{
-				it.getAbilities()->elementDamage = intValue;
-				it.getAbilities()->elementType = COMBAT_YOTONDAMAGE;
-			}
-		}
-		else if(tmpStrValue == "elementranton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue))
-			{
-				it.getAbilities()->elementDamage = intValue;
-				it.getAbilities()->elementType = COMBAT_RANTONDAMAGE;
-			}
-		}
-		else if(tmpStrValue == "elementbakuton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue))
-			{
-				it.getAbilities()->elementDamage = intValue;
-				it.getAbilities()->elementType = COMBAT_BAKUTONDAMAGE;
-			}
-		}
-		else if(tmpStrValue == "elementshakuton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue))
-			{
-				it.getAbilities()->elementDamage = intValue;
-				it.getAbilities()->elementType = COMBAT_SHAKUTONDAMAGE;
-			}
-		}
-		else if(tmpStrValue == "elementfutton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue))
-			{
-				it.getAbilities()->elementDamage = intValue;
-				it.getAbilities()->elementType = COMBAT_FUTTONDAMAGE;
-			}
-		}
-		else if(tmpStrValue == "elementjinton")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue))
-			{
-				it.getAbilities()->elementDamage = intValue;
-				it.getAbilities()->elementType = COMBAT_JINTONDAMAGE;
-			}
-		}
-		else if(tmpStrValue == "elementsatetsu")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue))
-			{
-				it.getAbilities()->elementDamage = intValue;
-				it.getAbilities()->elementType = COMBAT_SATETSUDAMAGE;
-			}
-		}
-		else if(tmpStrValue == "elementtaijutsu")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue))
-			{
-				it.getAbilities()->elementDamage = intValue;
-				it.getAbilities()->elementType = COMBAT_TAIJUTSUDAMAGE;
-			}
-		}
-		else if(tmpStrValue == "elementyin")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue))
-			{
-				it.getAbilities()->elementDamage = intValue;
-				it.getAbilities()->elementType = COMBAT_YINDAMAGE;
-			}
-		}
-		else if(tmpStrValue == "elementyang")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue))
-			{
-				it.getAbilities()->elementDamage = intValue;
-				it.getAbilities()->elementType = COMBAT_YANGDAMAGE;
-			}
-		}
-		else if(tmpStrValue == "elementkenjutsu")
-		{
-			if(readXMLInteger(itemAttributesNode, "value", intValue))
-			{
-				it.getAbilities()->elementDamage = intValue;
-				it.getAbilities()->elementType = COMBAT_KENJUTSUDAMAGE;
 			}
 		}
 		else if(tmpStrValue == "elementfire")

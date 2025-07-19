@@ -70,7 +70,7 @@ std::string Mission::getDescription(Player* player)
 	{
 		int32_t cmp = atoi(value.c_str());
 		if(cmp >= endValue)
-			return parseStorages(Localization::t(player->getLanguage(), states.rbegin()->second), value, player);
+			return parseStorages(states.rbegin()->second, value, player);
 
 		for(int32_t i = (endValue - 1); i >= startValue; --i)
 		{
@@ -79,14 +79,14 @@ std::string Mission::getDescription(Player* player)
 
 			std::string tmp = states[i];
 			if(!tmp.empty())
-				return parseStorages(Localization::t(player->getLanguage(), tmp), value, player);
+				return parseStorages(tmp, value, player);
 		}
 	}
 
 	if(state.size())
-		return parseStorages(Localization::t(player->getLanguage(), state), value, player);
+		return parseStorages(state, value, player);
 
-	return Localization::t(player->getLanguage(), "Couldn't retrieve any mission description, please report to a gamemaster.");
+	return "Couldn't retrieve any mission description, please report to a gamemaster.";
 }
 
 Quest::~Quest()

@@ -349,12 +349,8 @@ ReturnValue Actions::canUse(const Player* player, const Position& pos)
 		HouseTile* houseTile = tile->getHouseTile();
 		if(houseTile && houseTile->getHouse() && !houseTile->getHouse()->isInvited(player))
 			return RET_PLAYERISNOTINVITED;
-
-		if (houseTile && houseTile->getHouse() && !player->hasCustomFlag(PlayerCustomFlag_CanThrowAnywhere) && houseTile->getHouse()->isProtected() && player->getGUID() != houseTile->getHouse()->getOwner())
-		{
-			return RET_HOUSEPROTECTED;
-		}
 	}
+
 	return RET_NOERROR;
 }
 
@@ -555,7 +551,7 @@ ReturnValue Actions::internalUseItem(Player* player, const Position& pos, uint8_
 
 	if(item->isPremiumScroll())
 	{
-		std::stringstream ss;
+		std::ostringstream ss;
 		ss << " You have recived " << it.premiumDays << " premium days.";
 		player->sendTextMessage(MSG_INFO_DESCR, ss.str());
 
@@ -572,17 +568,9 @@ bool Actions::useItem(Player* player, const Position& pos, uint8_t index, Item* 
 	if(!player->canDoAction())
 		return false;
 
-	if (player->hasCondition(CONDITION_EXHAUST, 20))
-	{
-		return false;
-	}
-
 	player->setNextActionTask(NULL);
 	player->stopWalk();
-	
-	//player->setNextAction(OTSYS_TIME() + g_config.getNumber(ConfigManager::ACTIONS_DELAY_INTERVAL) - 10);
-	if (Condition * privCondition = Condition::createCondition(CONDITIONID_DEFAULT, CONDITION_EXHAUST, g_config.getNumber(ConfigManager::ACTIONS_DELAY_INTERVAL), 0, false, 20))
-		player->addCondition(privCondition);
+	player->setNextAction(OTSYS_TIME() + g_config.getNumber(ConfigManager::ACTIONS_DELAY_INTERVAL) - 10);
 
 	ReturnValue ret = internalUseItem(player, pos, index, item, 0);
 	if(ret == RET_NOERROR)
@@ -668,91 +656,9 @@ bool Actions::useItemEx(Player* player, const Position& fromPos, const Position&
 	if(!player->canDoAction())
 		return false;
 
-	//Potions
-
-	uint16_t itemi = item->getID();
-
-	if (player->hasCondition(CONDITION_EXHAUST, 21))
-	{
-		if (!(itemi == 7588 ||
-			itemi == 7589 ||
-			itemi == 7590 ||
-			itemi == 7591 ||
-			itemi == 8472 ||
-			itemi == 8473 ||
-			itemi == 7618 ||
-			itemi == 7620 ||
-			itemi == 8704 ||
-			itemi == 2420
-			))
-		{
-			return false;
-		}
-	}
-	if (player->hasCondition(CONDITION_EXHAUST, EXHAUST_POTION))
-	{
-		if (itemi == 7588 ||
-			itemi == 7589 ||
-			itemi == 7590 ||
-			itemi == 7591 ||
-			itemi == 8472 ||
-			itemi == 8473 ||
-			itemi == 7618 ||
-			itemi == 7620 ||
-			itemi == 8704)
-		{
-			return false;
-		}
-	}
-	if (player->hasCondition(CONDITION_EXHAUST, EXHAUST_MACHETE))
-	{
-		if (itemi == 2420)
-		{
-			return false;
-		}
-	}
-
 	player->setNextActionTask(NULL);
 	player->stopWalk();
-	//player->setNextAction(OTSYS_TIME() + g_config.getNumber(ConfigManager::EX_ACTIONS_DELAY_INTERVAL) - 10);
-
-	if ((itemi == 7588 ||
-		itemi == 7589 ||
-		itemi == 7590 ||
-		itemi == 7591 ||
-		itemi == 8472 ||
-		itemi == 8473 ||
-		itemi == 7618 ||
-		itemi == 7620 ||
-		itemi == 8704 ||
-		itemi == 2420
-		))
-	{
-		if (itemi == 7588 ||
-			itemi == 7589 ||
-			itemi == 7590 ||
-			itemi == 7591 ||
-			itemi == 8472 ||
-			itemi == 8473 ||
-			itemi == 7618 ||
-			itemi == 7620 ||
-			itemi == 8704)
-		{
-			if (Condition * privCondition = Condition::createCondition(CONDITIONID_DEFAULT, CONDITION_EXHAUST, g_config.getNumber(ConfigManager::EX_ACTIONS_DELAY_INTERVAL), 0, false, EXHAUST_POTION))
-				player->addCondition(privCondition);
-		}
-
-		if (itemi == 2420)
-		{
-			if (Condition * privCondition = Condition::createCondition(CONDITIONID_DEFAULT, CONDITION_EXHAUST, g_config.getNumber(ConfigManager::EX_ACTIONS_DELAY_INTERVAL), 0, false, EXHAUST_MACHETE))
-				player->addCondition(privCondition);
-		}
-
-	}
-	else {
-		if (Condition * privCondition = Condition::createCondition(CONDITIONID_DEFAULT, CONDITION_EXHAUST, g_config.getNumber(ConfigManager::EX_ACTIONS_DELAY_INTERVAL), 0, false, 21))
-			player->addCondition(privCondition);
-	}
+	player->setNextAction(OTSYS_TIME() + g_config.getNumber(ConfigManager::EX_ACTIONS_DELAY_INTERVAL) - 10);
 
 	int32_t fromStackPos = 0;
 	if(item->getParent())
@@ -815,7 +721,7 @@ bool Action::executeUse(Player* player, Item* item, const PositionEx& fromPos, c
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(player->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 
 			scriptstream << "local cid = " << env->addThing(player) << std::endl;
 			env->streamThing(scriptstream, "item", item, env->addThing(item));
@@ -849,7 +755,7 @@ bool Action::executeUse(Player* player, Item* item, const PositionEx& fromPos, c
 		else
 		{
 			#ifdef __DEBUG_LUASCRIPTS__
-			std::stringstream desc;
+			std::ostringstream desc;
 			desc << player->getName() << " - " << item->getID() << " " << fromPos << "|" << toPos;
 			env->setEvent(desc.str());
 			#endif

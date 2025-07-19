@@ -22,8 +22,10 @@
 #include "game.h"
 #include "creature.h"
 #include "combat.h"
+#include "configmanager.h"
 
 extern Game g_game;
+extern ConfigManager g_config;
 
 Condition::Condition(ConditionId_t _id, ConditionType_t _type, int32_t _ticks, bool _buff, uint32_t _subId):
 id(_id), subId(_subId), ticks(_ticks), endTime(0), conditionType(_type), buff(_buff)
@@ -72,7 +74,7 @@ bool Condition::unserializeProp(ConditionAttr_t attr, PropStream& propStream)
 	{
 		case CONDITIONATTR_TYPE:
 		{
-			int32_t value = 0;
+			uint32_t value = 0;
 			if(!propStream.getType(value))
 				return false;
 
@@ -82,7 +84,7 @@ bool Condition::unserializeProp(ConditionAttr_t attr, PropStream& propStream)
 
 		case CONDITIONATTR_ID:
 		{
-			int32_t value = 0;
+			uint32_t value = 0;
 			if(!propStream.getType(value))
 				return false;
 
@@ -102,7 +104,7 @@ bool Condition::unserializeProp(ConditionAttr_t attr, PropStream& propStream)
 
 		case CONDITIONATTR_BUFF:
 		{
-			int32_t value = 0;
+			uint8_t value = 0;
 			if(!propStream.getType(value))
 				return false;
 
@@ -112,7 +114,7 @@ bool Condition::unserializeProp(ConditionAttr_t attr, PropStream& propStream)
 
 		case CONDITIONATTR_SUBID:
 		{
-			int32_t value = 0;
+			uint32_t value = 0;
 			if(!propStream.getType(value))
 				return false;
 
@@ -133,19 +135,19 @@ bool Condition::unserializeProp(ConditionAttr_t attr, PropStream& propStream)
 bool Condition::serialize(PropWriteStream& propWriteStream)
 {
 	propWriteStream.addByte(CONDITIONATTR_TYPE);
-	propWriteStream.addType((int32_t)conditionType);
+	propWriteStream.addType((uint32_t)conditionType);
 
 	propWriteStream.addByte(CONDITIONATTR_ID);
-	propWriteStream.addType((int32_t)id);
+	propWriteStream.addType((uint32_t)id);
 
 	propWriteStream.addByte(CONDITIONATTR_TICKS);
 	propWriteStream.addType((int32_t)ticks);
 
 	propWriteStream.addByte(CONDITIONATTR_BUFF);
-	propWriteStream.addType((int32_t)buff ? 1 : 0);
+	propWriteStream.addType((uint8_t)(buff ? 1 : 0));
 
 	propWriteStream.addByte(CONDITIONATTR_SUBID);
-	propWriteStream.addType((int32_t)subId);
+	propWriteStream.addType((uint32_t)subId);
 	return true;
 }
 
@@ -169,7 +171,7 @@ bool Condition::executeCondition(Creature* creature, int32_t interval)
 	if(interval > 0)
 	{
 		bool tmp = false;
-		creature->onTickCondition(getType(), interval, tmp);
+		creature->onTickCondition(conditionType, id, interval, tmp);
 	}
 
 	if(ticks == -1)
@@ -191,26 +193,6 @@ Condition* Condition::createCondition(ConditionId_t _id, ConditionType_t _type, 
 		case CONDITION_CURSED:
 		case CONDITION_DROWN:
 		case CONDITION_BLEEDING:
-		case CONDITION_SUITON:
-		case CONDITION_FUUTON:
-		case CONDITION_DOTON:
-		case CONDITION_RAITON:
-		case CONDITION_MOKUTON:
-		case CONDITION_SHOTON:
-		case CONDITION_SUNA:
-	    case CONDITION_ENTON:
-		case CONDITION_HYOTON:
-		case CONDITION_YOTON:
-		case CONDITION_RANTON:
-		case CONDITION_BAKUTON:
-		case CONDITION_SHAKUTON:
-		case CONDITION_FUTTON:
-		case CONDITION_JINTON:
-		case CONDITION_SATETSU:
-		case CONDITION_TAIJUTSU:
-		case CONDITION_YIN:
-		case CONDITION_YANG:
-		case CONDITION_KENJUTSU:
 			return new ConditionDamage(_id, _type, _buff, _subId);
 
 		case CONDITION_HASTE:
@@ -244,6 +226,7 @@ Condition* Condition::createCondition(ConditionId_t _id, ConditionType_t _type, 
 		case CONDITION_PACIFIED:
 		case CONDITION_GAMEMASTER:
 		case CONDITION_SPELLCOOLDOWN:
+		case CONDITION_LOGINPROTECTION:
 			return new ConditionGeneric(_id, _type, _ticks, _buff, _subId);
 
 		default:
@@ -273,15 +256,15 @@ Condition* Condition::createCondition(PropStream& propStream)
 	if(!propStream.getByte(attr) || attr != CONDITIONATTR_TICKS)
 		return NULL;
 
-	uint32_t _ticks = 0;
-	if(!propStream.getLong(_ticks))
+	int32_t _ticks = 0;
+	if(!propStream.getType(_ticks))
 		return NULL;
 
 	if(!propStream.getByte(attr) || attr != CONDITIONATTR_BUFF)
 		return NULL;
 
-	uint32_t _buff = 0;
-	if(!propStream.getLong(_buff))
+	uint8_t _buff = 0;
+	if(!propStream.getByte(_buff))
 		return NULL;
 
 	if(!propStream.getByte(attr) || attr != CONDITIONATTR_SUBID)
@@ -747,17 +730,19 @@ bool ConditionRegeneration::executeCondition(Creature* creature, int32_t interva
 {
 	internalManaTicks += interval;
 	internalHealthTicks += interval;
-	if(creature->getZone() != ZONE_PROTECTION)
 	{
 		if(internalHealthTicks >= healthTicks)
 		{
 			internalHealthTicks = 0;
 			if(healthGain && creature->getHealth() < creature->getMaxHealth())
 			{
-				if(getSubId() != 0)
-					g_game.combatChangeHealth(COMBAT_HEALING, creature, creature, healthGain);
-				else
+				if (getSubId() != 0) {
+					CombatParams params;
+					params.combatType = COMBAT_HEALING;
+					g_game.combatChangeHealth(params, creature, creature, healthGain);
+				} else {
 					creature->changeHealth(healthGain);
+				}
 			}
 		}
 
@@ -772,7 +757,7 @@ bool ConditionRegeneration::executeCondition(Creature* creature, int32_t interva
 					creature->changeMana(manaGain);
 			}
 		}
-	}
+	} 
 
 	return ConditionGeneric::executeCondition(creature, interval);
 }
@@ -965,11 +950,11 @@ bool ConditionDamage::unserializeProp(ConditionAttr_t attr, PropStream& propStre
 	{
 		case CONDITIONATTR_DELAYED:
 		{
-			bool value = false;
+			uint8_t value = 0;
 			if(!propStream.getType(value))
 				return false;
 
-			delayed = value;
+			delayed = (value != 0);
 			return true;
 		}
 
@@ -1019,7 +1004,7 @@ bool ConditionDamage::serialize(PropWriteStream& propWriteStream)
 		return false;
 
 	propWriteStream.addByte(CONDITIONATTR_DELAYED);
-	propWriteStream.addType(delayed);
+	propWriteStream.addType((uint8_t)delayed);
 
 	propWriteStream.addByte(CONDITIONATTR_PERIODDAMAGE);
 	propWriteStream.addType(periodDamage);
@@ -1138,7 +1123,7 @@ bool ConditionDamage::executeCondition(Creature* creature, int32_t interval)
 	else if(!damageList.empty())
 	{
 		bool remove = getTicks() != -1;
-		creature->onTickCondition(getType(), interval, remove);
+		creature->onTickCondition(conditionType, id, interval, remove);
 
 		IntervalInfo& damageInfo = damageList.front();
 		damageInfo.timeLeft -= interval;
@@ -1186,18 +1171,29 @@ bool ConditionDamage::getNextDamage(int32_t& damage)
 
 bool ConditionDamage::doDamage(Creature* creature, int32_t damage)
 {
-	if(creature->isSuppress(getType()))
+	if(creature->isSuppress(conditionType))
 		return true;
 
 	Creature* attacker = g_game.getCreatureByID(owner);
-	if(damage < 0 && attacker && attacker->getPlayer() && creature->getPlayer() && creature->getPlayer()->getSkull() != SKULL_BLACK)
-		damage = damage / 2;
+	if(g_config.getBool(ConfigManager::USE_BLACK_SKULL))
+	{
+		if(damage < 0 && attacker && attacker->getPlayer() && creature->getPlayer() && creature->getPlayer()->getSkull() != SKULL_BLACK)
+			damage = damage / 2;
+	}
+	else
+	{
+		if(damage < 0 && attacker && attacker->getPlayer() && creature->getPlayer())
+			damage = damage / 2;
+	}
 
 	CombatType_t combatType = Combat::ConditionToDamageType(conditionType);
 	if(g_game.combatBlockHit(combatType, attacker, creature, damage, false, false, field))
 		return false;
 
-	return g_game.combatChangeHealth(combatType, attacker, creature, damage);
+	CombatParams params;
+	params.combatType = combatType;
+	params.origin = ORIGIN_CONDITION;
+	return g_game.combatChangeHealth(params, attacker, creature, damage);
 }
 
 void ConditionDamage::addCondition(Creature* creature, const Condition* addCondition)
@@ -1288,66 +1284,6 @@ Icons_t ConditionDamage::getIcons() const
 
 		case CONDITION_BLEEDING:
 			return ICON_BLEED;
-		
-		case CONDITION_SUITON:
-			return ICON_BLEED;
-		
-		case CONDITION_FUUTON:
-			return ICON_BLEED;
-			
-		case CONDITION_DOTON:
-			return ICON_BLEED;
-		
-		case CONDITION_RAITON:
-			return ICON_BLEED;
-		
-		case CONDITION_MOKUTON:
-			return ICON_BLEED;
-		
-		case CONDITION_SHOTON:
-			return ICON_BLEED;
-			
-		case CONDITION_SUNA:
-			return ICON_BLEED;
-			
-		case CONDITION_ENTON:
-			return ICON_BLEED;
-			
-		case CONDITION_HYOTON:
-			return ICON_BLEED;
-		
-		case CONDITION_YOTON:
-			return ICON_BLEED;
-
-		case CONDITION_RANTON:
-			return ICON_BLEED;
-
-		case CONDITION_BAKUTON:
-			return ICON_BLEED;
-
-		case CONDITION_SHAKUTON:
-			return ICON_BLEED;
-
-		case CONDITION_FUTTON:
-			return ICON_BLEED;
-
-		case CONDITION_JINTON:
-			return ICON_BLEED;
-
-		case CONDITION_SATETSU:
-			return ICON_BLEED;
-
-		case CONDITION_TAIJUTSU:
-			return ICON_BLEED;
-
-		case CONDITION_YIN:
-			return ICON_BLEED;
-			
-		case CONDITION_YANG:
-			return ICON_BLEED;
-			
-		case CONDITION_KENJUTSU:
-			return ICON_BLEED;
 
 		default:
 			break;
@@ -1385,8 +1321,8 @@ void ConditionDamage::generateDamageList(int32_t amount, int32_t start, std::lis
 	}
 }
 
-ConditionSpeed::ConditionSpeed(ConditionId_t _id, ConditionType_t _type, int32_t _ticks, bool _buff, uint32_t _subId, int32_t changeSpeed) :
-	ConditionOutfit(_id, _type, _ticks, _buff, _subId)
+ConditionSpeed::ConditionSpeed(ConditionId_t _id, ConditionType_t _type, int32_t _ticks, bool _buff, uint32_t _subId, int32_t changeSpeed):
+ConditionOutfit(_id, _type, _ticks, _buff, _subId)
 {
 	speedDelta = changeSpeed;
 	mina = minb = maxa = maxb = 0.0f;
@@ -1409,21 +1345,21 @@ void ConditionSpeed::getFormulaValues(int32_t var, int32_t& min, int32_t& max) c
 bool ConditionSpeed::setParam(ConditionParam_t param, int32_t value)
 {
 	bool ret = ConditionOutfit::setParam(param, value);
-	switch (param)
+	switch(param)
 	{
-	case CONDITIONPARAM_SPEED:
-	{
-		speedDelta = value;
-		if (value > 0)
-			conditionType = CONDITION_HASTE;
-		else
-			conditionType = CONDITION_PARALYZE;
+		case CONDITIONPARAM_SPEED:
+		{
+			speedDelta = value;
+			if(value > 0)
+				conditionType = CONDITION_HASTE;
+			else
+				conditionType = CONDITION_PARALYZE;
 
-		return true;
-	}
+			return true;
+		}
 
-	default:
-		break;
+		default:
+			break;
 	}
 
 	return ret;
@@ -1431,60 +1367,60 @@ bool ConditionSpeed::setParam(ConditionParam_t param, int32_t value)
 
 bool ConditionSpeed::unserializeProp(ConditionAttr_t attr, PropStream& propStream)
 {
-	switch (attr)
+	switch(attr)
 	{
-	case CONDITIONATTR_SPEEDDELTA:
-	{
-		int32_t value = 0;
-		if (!propStream.getType(value))
-			return false;
+		case CONDITIONATTR_SPEEDDELTA:
+		{
+			int32_t value = 0;
+			if(!propStream.getType(value))
+				return false;
 
-		speedDelta = value;
-		return true;
-	}
+			speedDelta = value;
+			return true;
+		}
 
-	case CONDITIONATTR_FORMULA_MINA:
-	{
-		float value = 0;
-		if (!propStream.getType(value))
-			return false;
+		case CONDITIONATTR_FORMULA_MINA:
+		{
+			float value = 0;
+			if(!propStream.getType(value))
+				return false;
 
-		mina = value;
-		return true;
-	}
+			mina = value;
+			return true;
+		}
 
-	case CONDITIONATTR_FORMULA_MINB:
-	{
-		float value = 0;
-		if (!propStream.getType(value))
-			return false;
+		case CONDITIONATTR_FORMULA_MINB:
+		{
+			float value = 0;
+			if(!propStream.getType(value))
+				return false;
 
-		minb = value;
-		return true;
-	}
+			minb = value;
+			return true;
+		}
 
-	case CONDITIONATTR_FORMULA_MAXA:
-	{
-		float value = 0;
-		if (!propStream.getType(value))
-			return false;
+		case CONDITIONATTR_FORMULA_MAXA:
+		{
+			float value = 0;
+			if(!propStream.getType(value))
+				return false;
 
-		maxa = value;
-		return true;
-	}
+			maxa = value;
+			return true;
+		}
 
-	case CONDITIONATTR_FORMULA_MAXB:
-	{
-		float value = 0;
-		if (!propStream.getType(value))
-			return false;
+		case CONDITIONATTR_FORMULA_MAXB:
+		{
+			float value = 0;
+			if(!propStream.getType(value))
+				return false;
 
-		maxb = value;
-		return true;
-	}
+			maxb = value;
+			return true;
+		}
 
-	default:
-		break;
+		default:
+			break;
 	}
 
 	return ConditionOutfit::unserializeProp(attr, propStream);
@@ -1492,7 +1428,7 @@ bool ConditionSpeed::unserializeProp(ConditionAttr_t attr, PropStream& propStrea
 
 bool ConditionSpeed::serialize(PropWriteStream& propWriteStream)
 {
-	if (!ConditionOutfit::serialize(propWriteStream))
+	if(!ConditionOutfit::serialize(propWriteStream))
 		return false;
 
 	propWriteStream.addByte(CONDITIONATTR_SPEEDDELTA);
@@ -1514,7 +1450,7 @@ bool ConditionSpeed::serialize(PropWriteStream& propWriteStream)
 
 bool ConditionSpeed::startCondition(Creature* creature)
 {
-	if (!speedDelta)
+	if(!speedDelta)
 	{
 		int32_t min, max;
 		getFormulaValues(creature->getBaseSpeed(), min, max);
@@ -1533,7 +1469,7 @@ void ConditionSpeed::endCondition(Creature* creature, ConditionEnd_t reason)
 
 void ConditionSpeed::addCondition(Creature* creature, const Condition* addCondition)
 {
-	if (conditionType != addCondition->getType() || (ticks == -1 && addCondition->getTicks() > 0))
+	if(conditionType != addCondition->getType() || (ticks == -1 && addCondition->getTicks() > 0))
 		return;
 
 	setTicks(addCondition->getTicks());
@@ -1549,7 +1485,7 @@ void ConditionSpeed::addCondition(Creature* creature, const Condition* addCondit
 	outfits = conditionSpeed.outfits;
 
 	changeOutfit(creature);
-	if (!speedDelta)
+	if(!speedDelta)
 	{
 		int32_t min, max;
 		getFormulaValues(creature->getBaseSpeed(), min, max);
@@ -1557,33 +1493,33 @@ void ConditionSpeed::addCondition(Creature* creature, const Condition* addCondit
 	}
 
 	int32_t newSpeedChange = speedDelta - oldSpeedDelta;
-	if (newSpeedChange)
+	if(newSpeedChange)
 		g_game.changeSpeed(creature, newSpeedChange);
 }
 
 Icons_t ConditionSpeed::getIcons() const
 {
 	Icons_t icon = Condition::getIcons();
-	if (icon != ICON_NONE)
+	if(icon != ICON_NONE)
 		return icon;
 
-	switch (conditionType)
+	switch(conditionType)
 	{
-	case CONDITION_HASTE:
-		return ICON_HASTE;
+		case CONDITION_HASTE:
+			return ICON_HASTE;
 
-	case CONDITION_PARALYZE:
-		return ICON_PARALYZE;
+		case CONDITION_PARALYZE:
+			return ICON_PARALYZE;
 
-	default:
-		break;
+		default:
+			break;
 	}
 
 	return ICON_NONE;
 }
 
-ConditionOutfit::ConditionOutfit(ConditionId_t _id, ConditionType_t _type, int32_t _ticks, bool _buff, uint32_t _subId) :
-	Condition(_id, _type, _ticks, _buff, _subId)
+ConditionOutfit::ConditionOutfit(ConditionId_t _id, ConditionType_t _type, int32_t _ticks, bool _buff, uint32_t _subId):
+Condition(_id, _type, _ticks, _buff, _subId)
 {
 	//
 }
@@ -1591,19 +1527,19 @@ ConditionOutfit::ConditionOutfit(ConditionId_t _id, ConditionType_t _type, int32
 bool ConditionOutfit::unserializeProp(ConditionAttr_t attr, PropStream& propStream)
 {
 	Outfit_t outfit;
-	switch (attr)
+	switch(attr)
 	{
-	case CONDITIONATTR_OUTFIT:
-	{
-		if (!propStream.getType(outfit))
-			return false;
+		case CONDITIONATTR_OUTFIT:
+		{
+			if(!propStream.getType(outfit))
+				return false;
 
-		outfits.push_back(outfit);
-		return true;
-	}
+			outfits.push_back(outfit);
+			return true;
+		}
 
-	default:
-		break;
+		default:
+			break;
 	}
 
 	return Condition::unserializeProp(attr, propStream);
@@ -1611,10 +1547,10 @@ bool ConditionOutfit::unserializeProp(ConditionAttr_t attr, PropStream& propStre
 
 bool ConditionOutfit::serialize(PropWriteStream& propWriteStream)
 {
-	if (!Condition::serialize(propWriteStream))
+	if(!Condition::serialize(propWriteStream))
 		return false;
 
-	for (std::vector<Outfit_t>::const_iterator it = outfits.begin(); it != outfits.end(); ++it)
+	for(std::vector<Outfit_t>::const_iterator it = outfits.begin(); it != outfits.end(); ++it)
 	{
 		propWriteStream.addByte(CONDITIONATTR_OUTFIT);
 		propWriteStream.addType(*it);
@@ -1631,10 +1567,10 @@ bool ConditionOutfit::startCondition(Creature* creature)
 
 void ConditionOutfit::changeOutfit(Creature* creature, int32_t index/* = -1*/)
 {
-	if (outfits.empty())
+	if(outfits.empty())
 		return;
 
-	if (index == -1)
+	if(index == -1)
 		index = random_range(0, outfits.size() - 1);
 
 	g_game.internalCreatureChangeOutfit(creature, outfits[index], true);
@@ -1642,13 +1578,13 @@ void ConditionOutfit::changeOutfit(Creature* creature, int32_t index/* = -1*/)
 
 void ConditionOutfit::endCondition(Creature* creature, ConditionEnd_t)
 {
-	if (!outfits.empty())
+	if(!outfits.empty())
 		g_game.internalCreatureChangeOutfit(creature, creature->getDefaultOutfit(), true);
 }
 
 void ConditionOutfit::addCondition(Creature* creature, const Condition* addCondition)
 {
-	if (!updateCondition(addCondition))
+	if(!updateCondition(addCondition))
 		return;
 
 	setTicks(addCondition->getTicks());

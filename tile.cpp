@@ -182,11 +182,8 @@ MagicField* Tile::getFieldItem() const
 	{
 		for(ItemVector::const_reverse_iterator it = items->rbegin(); it != items->rend(); ++it)
 		{
-			if ((*it) != NULL)
-			{
-				if ((*it)->getMagicField())
-					return (*it)->getMagicField();
-			}
+			if((*it)->getMagicField())
+				return (*it)->getMagicField();
 		}
 	}
 
@@ -259,6 +256,17 @@ Creature* Tile::getTopCreature()
 	{
 		if(!creatures->empty())
 			return *creatures->begin();
+	}
+
+	return NULL;
+}
+
+Creature* Tile::getBottomCreature()
+{
+	if(CreatureVector* creatures = getCreatures())
+	{
+		if(!creatures->empty())
+			return *creatures->rbegin();
 	}
 
 	return NULL;
@@ -346,6 +354,34 @@ const Creature* Tile::getTopVisibleCreature(const Creature* creature) const
 	if(const CreatureVector* creatures = getCreatures())
 	{
 		for(CreatureVector::const_iterator cit = creatures->begin(); cit != creatures->end(); ++cit)
+		{
+			if(creature->canSeeCreature(*cit))
+				return (*cit);
+		}
+	}
+
+	return NULL;
+}
+
+Creature* Tile::getBottomVisibleCreature(const Creature* creature)
+{
+	if(CreatureVector* creatures = getCreatures())
+	{
+		for(CreatureVector::reverse_iterator cit = creatures->rbegin(); cit != creatures->rend(); ++cit)
+		{
+			if(creature->canSeeCreature(*cit))
+				return (*cit);
+		}
+	}
+
+	return NULL;
+}
+
+const Creature* Tile::getBottomVisibleCreature(const Creature* creature) const
+{
+	if(const CreatureVector* creatures = getCreatures())
+	{
+		for(CreatureVector::const_reverse_iterator cit = creatures->rbegin(); cit != creatures->rend(); ++cit)
 		{
 			if(creature->canSeeCreature(*cit))
 				return (*cit);
@@ -519,9 +555,6 @@ ReturnValue Tile::__queryAdd(int32_t, const Thing* thing, uint32_t,
 
 			if(floorChange() || positionChange())
 				return RET_NOTPOSSIBLE;
-			
-			if(monster->getCanWalkEverywhere())
-                return RET_NOERROR;
 
 			if(monster->canPushCreatures() && !monster->isSummon())
 			{
@@ -660,8 +693,16 @@ ReturnValue Tile::__queryAdd(int32_t, const Thing* thing, uint32_t,
 		if(hasBitSet(FLAG_NOLIMIT, flags))
 			return RET_NOERROR;
 
-		if(!item->getMagicField() && isFull())
+		if(isFull() && !item->isMagicField())
 			return RET_TILEISFULL;
+		
+		if (item->isMagicField())
+		{
+			if (hasFlag(TILESTATE_BLOCKSOLID))
+			{
+				return RET_NOTPOSSIBLE;
+			}
+		}
 
 		bool isHangable = item->isHangable();
 		if(!ground && !isHangable)
@@ -676,34 +717,78 @@ ReturnValue Tile::__queryAdd(int32_t, const Thing* thing, uint32_t,
 			}
 		}
 
-		bool hasHangable = false, supportHangable = false;
-		if(items)
+		if(ground)
 		{
-			for(ItemVector::const_iterator it = items->begin(); it != items->end(); ++it)
+			if(ground->isBlocking(NULL))
 			{
-				const ItemType& iType = Item::items[(*it)->getID()];
-				if(iType.isHangable)
-					hasHangable = true;
+				const ItemType& iType = Item::items[ground->getID()];
+				if(!iType.allowPickupable || item->isBlocking(NULL))
+				{
+					if(!item->isPickupable())
+						return RET_NOTENOUGHROOM;
 
-				if(iType.isHorizontal || iType.isVertical)
-					supportHangable = true;
-
-				if((isHangable && (iType.isHorizontal || iType.isVertical)) || !(*it)->isBlocking(NULL))
-					continue;
-
-				if(!item->isPickupable())
-					return RET_NOTPOSSIBLE;
-
-				if(iType.allowPickupable)
-					continue;
-
-				if(!iType.hasHeight || iType.pickupable || iType.isBed())
-					return RET_NOTPOSSIBLE;
+					if(!iType.hasHeight || iType.pickupable || iType.isBed())
+						return RET_NOTENOUGHROOM;
+				}
 			}
 		}
 
-		if(isHangable && hasHangable && supportHangable)
-			return RET_NEEDEXCHANGE;
+		if(items)
+		{
+			if(isHangable)
+			{
+				bool hasHangable = false, supportHangable = false;
+				for(ItemVector::const_iterator it = items->begin(); it != items->end(); ++it)
+				{
+					const ItemType& iType = Item::items[(*it)->getID()];
+					if((*it)->getCorpseOwner() && !iType.movable)
+						return RET_NOTPOSSIBLE;
+
+					if(iType.isHangable)
+						hasHangable = true;
+
+					if(iType.isHorizontal || iType.isVertical)
+					{
+						supportHangable = true;
+						continue;
+					}
+
+					if(!(*it)->isBlocking(NULL) || iType.allowPickupable)
+						continue;
+
+					if(!item->isPickupable())
+						return RET_NOTPOSSIBLE;
+
+					if(!iType.hasHeight || iType.pickupable || iType.isBed())
+						return RET_NOTPOSSIBLE;
+				}
+
+				if(hasHangable && supportHangable)
+					return RET_NEEDEXCHANGE;
+			}
+			else
+			{
+				for(ItemVector::const_iterator it = items->begin(); it != items->end(); ++it)
+				{
+					const ItemType& iType = Item::items[(*it)->getID()];
+					
+					if (g_config.getBool(ConfigManager::ALLOW_CORPSE_BLOCK))
+					{
+						if ((*it)->getCorpseOwner() && !iType.movable)
+							return RET_NOTPOSSIBLE;
+					}
+
+					if(!(*it)->isBlocking(NULL) || iType.allowPickupable)
+						continue;
+
+					if(!item->isPickupable())
+						return RET_NOTPOSSIBLE;
+
+					if(!iType.hasHeight || iType.pickupable || iType.isBed())
+						return RET_NOTPOSSIBLE;
+				}
+			}
+		}
 	}
 
 	return RET_NOERROR;
@@ -1407,11 +1492,6 @@ int32_t Tile::__getIndexOfThing(const Thing* thing) const
 	{
 		if(thing && thing->getItem())
 		{
-			if (items->size() >= 312)
-			{
-				std::clog << "[WARNING]: Too many items at pos: " << getPosition() << std::endl;
-			}
-
 			for(ItemVector::const_iterator it = items->getBeginTopItem(); it != items->getEndTopItem(); ++it)
 			{
 				++n;
@@ -1425,7 +1505,7 @@ int32_t Tile::__getIndexOfThing(const Thing* thing) const
 
 	if(const CreatureVector* creatures = getCreatures())
 	{
-		if(thing->getCreature())
+		if(thing && thing->getCreature())
 		{
 			for(CreatureVector::const_iterator cit = creatures->begin(); cit != creatures->end(); ++cit)
 			{
@@ -1509,6 +1589,7 @@ Thing* Tile::__getThing(uint32_t index) const
 void Tile::postAddNotification(Creature* actor, Thing* thing, const Cylinder* oldParent,
 	int32_t index, CylinderLink_t link/* = LINK_OWNER*/)
 {
+
 	SpectatorVec list;
 	g_game.getSpectators(list, pos, true, true);
 	for (Creature* spectator : list) {
@@ -1560,13 +1641,12 @@ void Tile::postRemoveNotification(Creature* actor, Thing* thing, const Cylinder*
 {
 	SpectatorVec list;
 	g_game.getSpectators(list, pos, true, true);
-	if(/*isCompleteRemoval && */thingCount > 8)
+	if (/*isCompleteRemoval && */thingCount > 8)
 		onUpdateTile();
 
 	for (Creature* spectator : list) {
 		spectator->getPlayer()->postRemoveNotification(actor, thing, newParent, index, isCompleteRemoval, LINK_NEAR);
 	}
-
 	//calling movement scripts
 	if(Creature* creature = thing->getCreature())
 	{

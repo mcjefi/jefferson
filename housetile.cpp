@@ -85,15 +85,10 @@ ReturnValue HouseTile::__queryAdd(int32_t index, const Thing* thing, uint32_t co
 
 		if(actor && g_config.getBool(ConfigManager::HOUSE_PROTECTION))
 		{
-			if (const Player * player = actor->getPlayer())
+			if(const Player* player = actor->getPlayer())
 			{
-				if (!house->isInvited(player) && !player->hasCustomFlag(PlayerCustomFlag_CanThrowAnywhere))
+				if(!house->isInvited(player) && !player->hasCustomFlag(PlayerCustomFlag_CanThrowAnywhere))
 					return RET_PLAYERISNOTINVITED;
-
-				if (!player->hasCustomFlag(PlayerCustomFlag_CanThrowAnywhere) && house->isProtected() && player->getGUID() != house->getOwner())
-				{
-					return RET_HOUSEPROTECTED;
-				}
 			}
 		}
 	}
@@ -109,13 +104,7 @@ ReturnValue HouseTile::__queryRemove(const Thing* thing, uint32_t count, uint32_
 		{
 			if(!house->isInvited(player) && !player->hasCustomFlag(PlayerCustomFlag_CanThrowAnywhere))
 				return RET_PLAYERISNOTINVITED;
-
-			if (!player->hasCustomFlag(PlayerCustomFlag_CanThrowAnywhere) && house->isProtected() && player->getGUID() != house->getOwner())
-			{
-				return RET_HOUSEPROTECTED;
-			}
 		}
-		
 	}
 
 	return Tile::__queryRemove(thing, count, flags, actor);

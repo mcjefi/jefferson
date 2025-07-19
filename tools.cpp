@@ -19,106 +19,91 @@
 
 #include <iostream>
 #include <iomanip>
+#include <ctime>
 
-#include <openssl/sha.h>
-#include <openssl/md5.h>
+
+//std::put_time for old GCC
+#if __GNUC__ && __GNUC__ < 5
+#include <ostream>  // std::basic_ostream
+#include <ios>      // std::ios_base
+#include <locale>   // std::use_facet, std::time_put
+#include <iterator> // std::ostreambuf_iterator
+
+template<typename CharT>
+struct _put_time
+{
+	const std::tm* time;
+	const char* fmt;
+};
+
+template<typename CharT>
+inline _put_time<CharT>
+put_time(const std::tm* time, const CharT* fmt)
+{
+	return { time, fmt };
+}
+
+template<typename CharT, typename Traits>
+std::basic_ostream<CharT, Traits>&
+operator<<(std::basic_ostream<CharT, Traits>& os, _put_time<CharT> f)
+{
+	typedef typename std::ostreambuf_iterator<CharT, Traits> Iter;
+	typedef std::time_put<CharT, Iter> TimePut;
+
+	const CharT* const fmt_end = f.fmt + Traits::length(f.fmt);
+	const TimePut& mp = std::use_facet<TimePut>(os.getloc());
+
+	std::ios_base::iostate err = std::ios_base::goodbit;
+	try {
+		if(mp.put(Iter(os.rdbuf()), os, os.fill(), f.time, f.fmt, fmt_end).failed())
+			err |= std::ios_base::badbit;
+	} catch(...) {
+		err |= std::ios_base::badbit;
+	}
+
+	if(err)
+		os.setstate(err);
+
+	return os;
+}
+
+#endif
+
+#include <boost/filesystem.hpp>
+#include "sha1.h"
+#include <random>
 
 #include "vocation.h"
 #include "configmanager.h"
 
 extern ConfigManager g_config;
 
-std::string transformToMD5(std::string plainText, bool upperCase)
-{
-	MD5_CTX c;
-	MD5_Init(&c);
-	MD5_Update(&c, plainText.c_str(), plainText.length());
-
-	uint8_t md[MD5_DIGEST_LENGTH];
-	MD5_Final(md, &c);
-
-	char output[(MD5_DIGEST_LENGTH << 1) + 1];
-	for(int32_t i = 0; i < (int32_t)sizeof(md); ++i)
-		sprintf(output + (i << 1), "%.2X", md[i]);
-
-	if(upperCase)
-		return std::string(output);
-
-	return asLowerCaseString(std::string(output));
-}
-
 std::string transformToSHA1(std::string plainText, bool upperCase)
 {
-	SHA_CTX c;
-	SHA1_Init(&c);
-	SHA1_Update(&c, plainText.c_str(), plainText.length());
+	SHA1 sha1;
+	unsigned sha1Hash[5];
+	std::stringstream hexStream;
 
-	uint8_t md[SHA_DIGEST_LENGTH];
-	SHA1_Final(md, &c);
+	sha1.Input((const uint8_t*)plainText.c_str(), plainText.length());
+	sha1.Result(sha1Hash);
 
-	char output[(SHA_DIGEST_LENGTH << 1) + 1];
-	for(int32_t i = 0; i < (int32_t)sizeof(md); ++i)
-		sprintf(output + (i << 1), "%.2X", md[i]);
+	hexStream.flags(std::ios::hex | std::ios::uppercase);
+	for(uint32_t i = 0; i < 5; ++i)
+		hexStream << std::setw(8) << std::setfill('0') << (uint32_t)sha1Hash[i];
 
-	if(upperCase)
-		return std::string(output);
+	std::string hexStr = hexStream.str();
+	if(!upperCase)
+		toLowerCaseString(hexStr);
 
-	return asLowerCaseString(std::string(output));
-}
-
-std::string transformToSHA256(std::string plainText, bool upperCase)
-{
-	SHA256_CTX c;
-	SHA256_Init(&c);
-	SHA256_Update(&c, plainText.c_str(), plainText.length());
-
-	uint8_t md[SHA256_DIGEST_LENGTH];
-	SHA256_Final(md, &c);
-
-	char output[(SHA256_DIGEST_LENGTH << 1) + 1];
-	for(int32_t i = 0; i < (int32_t)sizeof(md); ++i)
-		sprintf(output + (i << 1), "%.2X", md[i]);
-
-	if(upperCase)
-		return std::string(output);
-
-	return asLowerCaseString(std::string(output));
-}
-
-std::string transformToSHA512(std::string plainText, bool upperCase)
-{
-	SHA512_CTX c;
-	SHA512_Init(&c);
-	SHA512_Update(&c, plainText.c_str(), plainText.length());
-
-	uint8_t md[SHA512_DIGEST_LENGTH];
-	SHA512_Final(md, &c);
-
-	char output[(SHA512_DIGEST_LENGTH << 1) + 1];
-	for(int32_t i = 0; i < (int32_t)sizeof(md); ++i)
-		sprintf(output + (i << 1), "%.2X", md[i]);
-
-	if(upperCase)
-		return std::string(output);
-
-	return asLowerCaseString(std::string(output));
+	return hexStr;
 }
 
 void _encrypt(std::string& str, bool upperCase)
 {
 	switch(g_config.getNumber(ConfigManager::ENCRYPTION))
 	{
-		case ENCRYPTION_MD5:
-			str = transformToMD5(str, upperCase);
-			break;
 		case ENCRYPTION_SHA1:
 			str = transformToSHA1(str, upperCase);
-			break;
-		case ENCRYPTION_SHA256:
-			str = transformToSHA256(str, upperCase);
-			break;
-		case ENCRYPTION_SHA512:
-			str = transformToSHA512(str, upperCase);
 			break;
 		default:
 		{
@@ -318,7 +303,7 @@ bool parseXMLContentString(xmlNodePtr node, std::string& value)
 
 std::string getLastXMLError()
 {
-	std::stringstream ss;
+	std::ostringstream ss;
 	xmlErrorPtr lastError = xmlGetLastError();
 	if(lastError->line)
 		ss << "Line: " << lastError->line << ", ";
@@ -426,7 +411,7 @@ bool hasBitSet(uint32_t flag, uint32_t flags)
 #if !defined(_MSC_VER) || _MSC_VER < 1800
 double round(double v)
 {
-	if (v >= 0.0)
+	if(v >= 0.0)
 		return std::floor(v + 0.5);
 	else
 		return std::ceil(v - 0.5);
@@ -438,54 +423,59 @@ uint32_t rand24b()
 	return ((rand() << 12) ^ rand()) & 0xFFFFFF;
 }
 
-float box_muller(float m, float s)
+std::mt19937& getRandomGenerator()
 {
-	// normal random variate generator
-	// mean m, standard deviation s
-	float x1, x2, w, y1;
-	static float y2;
+	static std::random_device rd;
+	static std::mt19937 generator(rd());
+	return generator;
+}
 
-	static bool useLast = false;
-	if(useLast) // use value from previous call
-	{
-		y1 = y2;
-		useLast = false;
-		return (m + y1 * s);
+int32_t normal_random(int32_t minNumber, int32_t maxNumber)
+{
+	static std::normal_distribution<float> normalRand(0.45f, 0.22f);
+
+	if (minNumber == maxNumber) {
+		return minNumber;
+	}
+	else if (minNumber > maxNumber) {
+		std::swap(minNumber, maxNumber);
 	}
 
-	do
-	{
-		double r1 = (((float)(rand()) / RAND_MAX));
-		double r2 = (((float)(rand()) / RAND_MAX));
-
-		x1 = 2.0 * r1 - 1.0;
-		x2 = 2.0 * r2 - 1.0;
-		w = x1 * x1 + x2 * x2;
+	int32_t increment;
+	const int32_t diff = maxNumber - minNumber;
+	const float v = normalRand(getRandomGenerator());
+	if (v < 0.0) {
+		increment = diff / 2;
 	}
-	while(w >= 1.0);
-	w = sqrt((-2.0 * log(w)) / w);
+	else if (v > 1.0) {
+		increment = (diff + 1) / 2;
+	}
+	else {
+		increment = round(v * diff);
+	}
+	return minNumber + increment;
+}
 
-	y1 = x1 * w;
-	y2 = x2 * w;
-
-	useLast = true;
-	return (m + y1 * s);
+int32_t uniform_random(int32_t minNumber, int32_t maxNumber)
+{
+	static std::uniform_int_distribution<int32_t> uniformRand;
+	if (minNumber == maxNumber) {
+		return minNumber;
+	}
+	else if (minNumber > maxNumber) {
+		std::swap(minNumber, maxNumber);
+	}
+	return uniformRand(getRandomGenerator(), std::uniform_int_distribution<int32_t>::param_type(minNumber, maxNumber));
 }
 
 int32_t random_range(int32_t lowestNumber, int32_t highestNumber, DistributionType_t type /*= DISTRO_UNIFORM*/)
 {
-	if(highestNumber == lowestNumber)
-		return lowestNumber;
-
-	if(lowestNumber > highestNumber)
-		std::swap(lowestNumber, highestNumber);
-
 	switch(type)
 	{
 		case DISTRO_UNIFORM:
-			return (lowestNumber + ((int32_t)rand24b() % (highestNumber - lowestNumber + 1)));
+			return uniform_random(lowestNumber, highestNumber);
 		case DISTRO_NORMAL:
-			return (lowestNumber + int32_t(float(highestNumber - lowestNumber) * (float)std::min((float)1, std::max((float)0, box_muller(0.5, 0.25)))));
+			return normal_random(lowestNumber, highestNumber);
 		default:
 			break;
 	}
@@ -629,12 +619,12 @@ bool isNumbers(std::string text)
 bool checkText(std::string text, std::string str)
 {
 	trimString(text);
-	return strcasecmp(text.c_str(), str.c_str()) == 0;
+	return asLowerCaseString(text) == str;
 }
 
 std::string generateRecoveryKey(int32_t fieldCount, int32_t fieldLenght, bool mixCase/* = false*/)
 {
-	std::stringstream key;
+	std::ostringstream key;
 	int32_t i = 0, j = 0, lastNumber = 99, number = 0;
 
 	char character = 0, lastCharacter = 0;
@@ -715,7 +705,7 @@ std::string formatDate(time_t _time/* = 0*/)
 		_time = time(NULL);
 
 	const tm* tms = localtime(&_time);
-	std::stringstream s;
+	std::ostringstream s;
 	if(tms)
 		s << tms->tm_mday << "/" << (tms->tm_mon + 1) << "/" << (tms->tm_year + 1900) << " " << tms->tm_hour << ":" << tms->tm_min << ":" << tms->tm_sec;
 	else
@@ -741,39 +731,19 @@ std::string formatDateEx(time_t _time/* = 0*/, std::string format/* = "%d %b %Y,
 
 std::string formatTime(time_t _time/* = 0*/, bool ms/* = false*/)
 {
-	if(!_time)
-		_time = time(NULL);
-	else if(ms)
-		ms = false;
+	using namespace std::chrono;
 
-	const tm* tms = localtime(&_time);
-	std::stringstream s;
-	if(tms)
-	{
-		s << tms->tm_hour << ":" << tms->tm_min << ":";
-		if(tms->tm_sec < 10)
-			s << "0";
+	auto now = system_clock::now();
+	auto millisec = duration_cast<milliseconds>(now.time_since_epoch()) % 1000;
+	auto timer = system_clock::to_time_t(now);
 
-		s << tms->tm_sec;
-		if(ms)
-		{
-			timeb t;
-			ftime(&t);
+	std::tm bt = *std::localtime(&timer);
+	std::ostringstream oss;
 
-			s << "."; // make it format zzz
-			if(t.millitm < 10)
-				s << "0";
+	oss << std::put_time(&bt, "%H:%M:%S"); // HH:MM:SS
+	oss << '.' << std::setfill('0') << std::setw(3) << millisec.count();
 
-			if(t.millitm < 100)
-				s << "0";
-
-			s << t.millitm;
-		}
-	}
-	else
-		s << "UNIX Time: " << (int32_t)_time;
-
-	return s.str();
+	return oss.str();
 }
 
 std::string convertIPAddress(uint32_t ip)
@@ -940,6 +910,8 @@ Direction getReverseDirection(Direction dir)
 			return SOUTHWEST;
 		case SOUTHEAST:
 			return NORTHWEST;
+		default:
+			break;
 	}
 
 	return SOUTH;
@@ -976,6 +948,8 @@ Position getNextPosition(Direction direction, Position pos)
 		case NORTHEAST:
 			pos.x++;
 			pos.y--;
+			break;
+		default:
 			break;
 	}
 
@@ -1101,7 +1075,8 @@ MagicEffectNames magicEffectNames[] =
 	{"bats", MAGIC_EFFECT_BATS},
 	{"smoke", MAGIC_EFFECT_SMOKE},
 	{"insects", MAGIC_EFFECT_INSECTS},
-	{"dragonhead", MAGIC_EFFECT_DRAGONHEAD}
+	{"dragonhead", MAGIC_EFFECT_DRAGONHEAD},
+	{"semfim", MAGIC_EFFECT_SEMFIM}
 };
 
 ShootTypeNames shootTypeNames[] =
@@ -1148,7 +1123,8 @@ ShootTypeNames shootTypeNames[] =
 	{"smallearth", SHOOT_EFFECT_SMALLEARTH},
 	{"eartharrow", SHOOT_EFFECT_EARTHARROW},
 	{"explosion", SHOOT_EFFECT_EXPLOSION},
-	{"cake", SHOOT_EFFECT_CAKE}
+	{"cake", SHOOT_EFFECT_CAKE},
+	{"semfim", SHOOT_EFFECT_SEMFIM}
 };
 
 CombatTypeNames combatTypeNames[] =
@@ -1166,27 +1142,7 @@ CombatTypeNames combatTypeNames[] =
 	{"drown", COMBAT_DROWNDAMAGE},
 	{"ice", COMBAT_ICEDAMAGE},
 	{"holy", COMBAT_HOLYDAMAGE},
-	{"death", COMBAT_DEATHDAMAGE},
-	{"suiton", COMBAT_SUITONDAMAGE},
-	{"fuuton",COMBAT_FUUTONDAMAGE},
-	{"doton",COMBAT_DOTONDAMAGE},
-	{"raiton",COMBAT_RAITONDAMAGE},
-	{"mokuton",COMBAT_MOKUTONDAMAGE},
-	{"shoton",COMBAT_SHOTONDAMAGE},
-	{"suna",COMBAT_SUNADAMAGE},
-	{"enton",COMBAT_ENTONDAMAGE},
-	{"hyoton",COMBAT_HYOTONDAMAGE},
-	{"yoton",COMBAT_YOTONDAMAGE},
-	{"ranton",COMBAT_RANTONDAMAGE},
-	{"bakuton",COMBAT_BAKUTONDAMAGE},
-	{"shakuton",COMBAT_SHAKUTONDAMAGE},
-	{"futton",COMBAT_FUTTONDAMAGE},
-	{"jinton",COMBAT_JINTONDAMAGE},
-	{"satetsu",COMBAT_SATETSUDAMAGE},
-	{"taijutsu",COMBAT_TAIJUTSUDAMAGE},
-	{"yin",COMBAT_YINDAMAGE},
-	{"yang",COMBAT_YANGDAMAGE},
-	{"kenjutsu",COMBAT_KENJUTSUDAMAGE}
+	{"death", COMBAT_DEATHDAMAGE}
 };
 
 AmmoTypeNames ammoTypeNames[] =
@@ -1257,9 +1213,7 @@ FluidTypeNames fluidTypeNames[] =
 SkillIdNames skillIdNames[] =
 {
 	{"fist", SKILL_FIST},
-	{"agility", SKILL_FIST},
 	{"club", SKILL_CLUB},
-	{"glove", SKILL_CLUB},
 	{"sword", SKILL_SWORD},
 	{"axe", SKILL_AXE},
 	{"distance", SKILL_DIST},
@@ -1271,7 +1225,6 @@ SkillIdNames skillIdNames[] =
 	{"level", SKILL__LEVEL},
 	{"magiclevel", SKILL__MAGLEVEL},
 	{"magic level", SKILL__MAGLEVEL},
-	{"ninjutsu", SKILL__MAGLEVEL},
 	{"experience", SKILL__EXPERIENCE}
 };
 
@@ -1291,7 +1244,7 @@ MagicEffect_t getMagicEffect(const std::string& strValue)
 {
 	for(uint32_t i = 0; i < sizeof(magicEffectNames) / sizeof(MagicEffectNames); ++i)
 	{
-		if(boost::algorithm::iequals(strValue.c_str(), magicEffectNames[i].name))
+		if(boost::algorithm::iequals(strValue, magicEffectNames[i].name))
 			return magicEffectNames[i].magicEffect;
 	}
 
@@ -1302,7 +1255,7 @@ ShootEffect_t getShootType(const std::string& strValue)
 {
 	for(uint32_t i = 0; i < sizeof(shootTypeNames) / sizeof(ShootTypeNames); ++i)
 	{
-		if(boost::algorithm::iequals(strValue.c_str(), shootTypeNames[i].name))
+		if(boost::algorithm::iequals(strValue, shootTypeNames[i].name))
 			return shootTypeNames[i].shootType;
 	}
 
@@ -1313,7 +1266,7 @@ CombatType_t getCombatType(const std::string& strValue)
 {
 	for(uint32_t i = 0; i < sizeof(combatTypeNames) / sizeof(CombatTypeNames); ++i)
 	{
-		if(boost::algorithm::iequals(strValue.c_str(), combatTypeNames[i].name))
+		if(boost::algorithm::iequals(strValue, combatTypeNames[i].name))
 			return combatTypeNames[i].combatType;
 	}
 
@@ -1324,7 +1277,7 @@ Ammo_t getAmmoType(const std::string& strValue)
 {
 	for(uint32_t i = 0; i < sizeof(ammoTypeNames) / sizeof(AmmoTypeNames); ++i)
 	{
-		if(boost::algorithm::iequals(strValue.c_str(), ammoTypeNames[i].name))
+		if(boost::algorithm::iequals(strValue, ammoTypeNames[i].name))
 			return ammoTypeNames[i].ammoType;
 	}
 
@@ -1335,7 +1288,7 @@ AmmoAction_t getAmmoAction(const std::string& strValue)
 {
 	for(uint32_t i = 0; i < sizeof(ammoActionNames) / sizeof(AmmoActionNames); ++i)
 	{
-		if(boost::algorithm::iequals(strValue.c_str(), ammoActionNames[i].name))
+		if(boost::algorithm::iequals(strValue, ammoActionNames[i].name))
 			return ammoActionNames[i].ammoAction;
 	}
 
@@ -1346,7 +1299,7 @@ FluidTypes_t getFluidType(const std::string& strValue)
 {
 	for(uint32_t i = 0; i < sizeof(fluidTypeNames) / sizeof(FluidTypeNames); ++i)
 	{
-		if(boost::algorithm::iequals(strValue.c_str(), fluidTypeNames[i].name))
+		if(boost::algorithm::iequals(strValue, fluidTypeNames[i].name))
 			return fluidTypeNames[i].fluidType;
 	}
 
@@ -1357,7 +1310,7 @@ skills_t getSkillId(const std::string& strValue)
 {
 	for(uint32_t i = 0; i < sizeof(skillIdNames) / sizeof(SkillIdNames); ++i)
 	{
-		if(boost::algorithm::iequals(strValue.c_str(), skillIdNames[i].name))
+		if(boost::algorithm::iequals(strValue, skillIdNames[i].name))
 			return skillIdNames[i].skillId;
 	}
 
@@ -1368,7 +1321,7 @@ WeaponType_t getWeaponType(const std::string& strValue)
 {
 	for(uint32_t i = 0; i < sizeof(weaponTypeNames) / sizeof(WeaponTypeNames); ++i)
 	{
-		if(boost::algorithm::iequals(strValue.c_str(), weaponTypeNames[i].name))
+		if(boost::algorithm::iequals(strValue, weaponTypeNames[i].name))
 			return weaponTypeNames[i].weaponType;
 	}
 
@@ -1385,151 +1338,11 @@ void getCombatDetails(CombatType_t combatType, MagicEffect_t& magicEffect, Color
 			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
 			break;
 		}
-		
-		case COMBAT_SUITONDAMAGE:
-		{
-			textColor = COLOR_SUITON;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}
-		
-		case COMBAT_FUUTONDAMAGE:
-		{
-			textColor = COLOR_FUUTON;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}
-		
-		case COMBAT_DOTONDAMAGE:
-		{
-			textColor = COLOR_DOTON;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}
-		
-		case COMBAT_RAITONDAMAGE:
-		{
-			textColor = COLOR_RAITON;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}
-		
-		case COMBAT_MOKUTONDAMAGE:
-		{
-			textColor = COLOR_MOKUTON;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}
-		
-		case COMBAT_SHOTONDAMAGE:
-		{
-			textColor = COLOR_SHOTON;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}
-		
-		case COMBAT_SUNADAMAGE:
-		{
-			textColor = COLOR_SUNA;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}
-		
-		case COMBAT_ENTONDAMAGE:
-		{
-			textColor = COLOR_ENTON;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}
-		
-		case COMBAT_HYOTONDAMAGE:
-		{
-			textColor = COLOR_HYOTON;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}
-
-		case COMBAT_YOTONDAMAGE:
-		{
-			textColor = COLOR_YOTON;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}
-		
-		case COMBAT_RANTONDAMAGE:
-		{
-			textColor = COLOR_RANTON;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}
-		
-		case COMBAT_BAKUTONDAMAGE:
-		{
-			textColor = COLOR_BAKUTON;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}
-		
-		case COMBAT_SHAKUTONDAMAGE:
-		{
-			textColor = COLOR_SHAKUTON;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}
-		
-		case COMBAT_FUTTONDAMAGE:
-		{
-			textColor = COLOR_FUTTON;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}
-		
-		case COMBAT_JINTONDAMAGE:
-		{
-			textColor = COLOR_JINTON;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}
-		
-		case COMBAT_SATETSUDAMAGE:
-		{
-			textColor = COLOR_SATETSU;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}	
-
-		case COMBAT_TAIJUTSUDAMAGE:
-		{
-			textColor = COLOR_TAIJUTSU;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}
-		
-		case COMBAT_YINDAMAGE:
-		{
-			textColor = COLOR_BLACK;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}
-		
-	    case COMBAT_YANGDAMAGE:
-		{
-			textColor = COLOR_YANG;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}
-
-	    case COMBAT_KENJUTSUDAMAGE:
-		{
-			textColor = COLOR_DARKPURPLE;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}
 
 		case COMBAT_ENERGYDAMAGE:
 		{
 			textColor = COLOR_PURPLE;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
+			magicEffect = MAGIC_EFFECT_ENERGY_DAMAGE;
 			break;
 		}
 
@@ -1557,21 +1370,21 @@ void getCombatDetails(CombatType_t combatType, MagicEffect_t& magicEffect, Color
 		case COMBAT_ICEDAMAGE:
 		{
 			textColor = COLOR_TEAL;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
+			magicEffect = MAGIC_EFFECT_ICEATTACK;
 			break;
 		}
 
 		case COMBAT_HOLYDAMAGE:
 		{
 			textColor = COLOR_YELLOW;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
+			magicEffect = MAGIC_EFFECT_HOLYDAMAGE;
 			break;
 		}
 
 		case COMBAT_DEATHDAMAGE:
 		{
 			textColor = COLOR_DARKRED;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
+			magicEffect = MAGIC_EFFECT_SMALLCLOUDS;
 			break;
 		}
 
@@ -1621,47 +1434,6 @@ std::string getCombatName(CombatType_t combatType)
 			return "holy";
 		case COMBAT_DEATHDAMAGE:
 			return "death";
-		case COMBAT_SUITONDAMAGE:
-			return "suiton";
-		case COMBAT_FUUTONDAMAGE:
-			return "fuuton";
-		case COMBAT_DOTONDAMAGE:
-			return "doton";
-		case COMBAT_RAITONDAMAGE:
-			return "raiton";
-		case COMBAT_MOKUTONDAMAGE:
-			return "mokuton";
-		case COMBAT_SHOTONDAMAGE:
-			return "shoton";
-		case COMBAT_SUNADAMAGE:
-			return "suna";
-		case COMBAT_ENTONDAMAGE:
-			return "enton";
-		case COMBAT_HYOTONDAMAGE:
-			return "hyoton";
-		case COMBAT_YOTONDAMAGE:
-			return "yoton";
-		case COMBAT_RANTONDAMAGE:
-			return "ranton";
-		case COMBAT_BAKUTONDAMAGE:
-			return "bakuton";
-		case COMBAT_SHAKUTONDAMAGE:
-			return "shakuton";
-		case COMBAT_FUTTONDAMAGE:
-			return "futton";
-		case COMBAT_JINTONDAMAGE:
-			return "jinton";
-		case COMBAT_SATETSUDAMAGE:
-			return "satetsu";
-		case COMBAT_TAIJUTSUDAMAGE:
-			return "taijutsu";
-		case COMBAT_YINDAMAGE:
-			return "yin";
-		case COMBAT_YANGDAMAGE:
-			return "yang";
-		case COMBAT_KENJUTSUDAMAGE:
-			return "kenjutsu";
-			
 		default:
 			break;
 	}
@@ -1675,14 +1447,17 @@ std::string getSkillName(uint16_t skillId, bool suffix/* = true*/)
 	{
 		case SKILL_FIST:
 		{
-			std::string tmp = "agility";
+			std::string tmp = "fist";
+			if(suffix)
+				tmp += " fighting";
+
 			return tmp;
 		}
 		case SKILL_CLUB:
 		{
-			std::string tmp = "glove";
+			std::string tmp = "club";
 			if(suffix)
-				tmp += " ability";
+				tmp += " fighting";
 
 			return tmp;
 		}
@@ -1690,7 +1465,7 @@ std::string getSkillName(uint16_t skillId, bool suffix/* = true*/)
 		{
 			std::string tmp = "sword";
 			if(suffix)
-				tmp += " ability";
+				tmp += " fighting";
 
 			return tmp;
 		}
@@ -1698,7 +1473,7 @@ std::string getSkillName(uint16_t skillId, bool suffix/* = true*/)
 		{
 			std::string tmp = "axe";
 			if(suffix)
-				tmp += " ability";
+				tmp += " fighting";
 
 			return tmp;
 		}
@@ -1706,7 +1481,7 @@ std::string getSkillName(uint16_t skillId, bool suffix/* = true*/)
 		{
 			std::string tmp = "distance";
 			if(suffix)
-				tmp += " ability";
+				tmp += " fighting";
 
 			return tmp;
 		}
@@ -1715,7 +1490,7 @@ std::string getSkillName(uint16_t skillId, bool suffix/* = true*/)
 		case SKILL_FISH:
 			return "fishing";
 		case SKILL__MAGLEVEL:
-			return "ninjutsu";
+			return "magic level";
 		case SKILL__LEVEL:
 			return "level";
 		default:
@@ -1925,7 +1700,7 @@ bool parseVocationNode(xmlNodePtr vocationNode, VocationMap& vocationMap, String
 			}
 			else
 			{
-				std::stringstream ss;
+				std::ostringstream ss;
 				ss << "Wrong vocation id: " << intVector[i];
 
 				errorStr = ss.str();
@@ -1947,10 +1722,10 @@ bool parseIntegerVec(std::string str, IntegerVec& intVector)
 	for(StringVec::iterator it = strVector.begin(); it != strVector.end(); ++it)
 	{
 		tmpIntVector = vectorAtoi(explodeString((*it), "-"));
-
+		
 		if (tmpIntVector.size() == 0)
 			return false;
-
+		
 		if(!tmpIntVector[0] && it->substr(0, 1) != "0")
 			continue;
 
@@ -1965,14 +1740,9 @@ bool parseIntegerVec(std::string str, IntegerVec& intVector)
 	return true;
 }
 
-bool fileExists(const char* filename)
+bool fileExists(const std::string& filename)
 {
-	FILE* f = fopen(filename, "rb");
-	if(!f)
-		return false;
-
-	fclose(f);
-	return true;
+	return boost::filesystem::exists(filename);
 }
 
 uint32_t adlerChecksum(uint8_t* data, size_t length)

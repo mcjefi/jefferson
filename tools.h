@@ -29,8 +29,6 @@
 typedef std::vector<std::string> StringVec;
 typedef std::vector<int32_t> IntegerVec;
 
-typedef std::vector<std::pair<uint16_t, std::string>> ChannelGroup;//add by matheus
-
 typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
 typedef std::map<int32_t, bool> VocationMap;
 enum FileType_t
@@ -103,10 +101,7 @@ bool isValidAccountName(std::string text);
 bool isValidPassword(std::string text);
 bool isValidName(std::string text, bool forceUppercaseOnFirstLetter = true);
 
-std::string transformToMD5(std::string plainText, bool upperCase);
 std::string transformToSHA1(std::string plainText, bool upperCase);
-std::string transformToSHA256(std::string plainText, bool upperCase);
-std::string transformToSHA512(std::string plainText, bool upperCase);
 
 void _encrypt(std::string& str, bool upperCase);
 bool encryptTest(std::string plain, std::string& hash);
@@ -124,7 +119,7 @@ std::string formatDateEx(time_t _time = 0, std::string format = "%d %b %Y, %H:%M
 std::string formatTime(time_t _time = 0, bool miliseconds = false);
 
 uint32_t rand24b();
-float box_muller(float m, float s);
+
 int32_t random_range(int32_t lowestNumber, int32_t highestNumber, DistributionType_t type = DISTRO_UNIFORM);
 
 #if !defined(_MSC_VER) || _MSC_VER < 1800
@@ -174,7 +169,7 @@ std::string getReason(int32_t reasonId);
 std::string getAction(ViolationAction_t actionId, bool ipBanishment);
 std::string getWeaponName(WeaponType_t weaponType);
 
-bool fileExists(const char* filename);
+bool fileExists(const std::string& filename);
 std::string getFilePath(FileType_t type, std::string name = "");
 
 extern uint8_t serverFluidToClient(uint8_t serverFluid);

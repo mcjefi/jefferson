@@ -128,6 +128,20 @@ bool CreatureEvents::playerLogout(Player* player, bool forceLogout)
 	return result;
 }
 
+uint32_t CreatureEvents::executeMoveItems(Creature* actor, Item* item, const Position& frompos, const Position& pos)
+{
+	// fire global event if is registered
+	for(CreatureEventList::iterator it = m_creatureEvents.begin(); it != m_creatureEvents.end(); ++it)
+	{
+		if((*it)->getEventType() == CREATURE_EVENT_MOVEITEM)
+		{
+			if(!(*it)->executeMoveItem(actor, item, frompos, pos))
+				return 0;
+		}
+	}
+	return 1;
+}
+
 bool CreatureEvents::monsterSpawn(Monster* monster)
 {
 	//fire global event if is registered
@@ -213,6 +227,12 @@ CreatureEventType_t CreatureEvents::getType(const std::string& type)
 		_type = CREATURE_EVENT_EXTENDED_OPCODE;
 	else if(type == "moveitem")
 		_type = CREATURE_EVENT_MOVEITEM;
+	else if(type == "statschangeex")
+		_type = CREATURE_EVENT_STATSCHANGEEX;
+	else if(type == "equip" || type == "equipitem")
+		_type = CREATURE_EVENT_EQUIP_ITEM;
+	else if(type == "unequip" || type == "unequipitem")
+		_type = CREATURE_EVENT_UNEQUIP_ITEM;
 
 	return _type;
 }
@@ -334,6 +354,12 @@ std::string CreatureEvent::getScriptEventName() const
 			return "onExtendedOpcode";
 		case CREATURE_EVENT_MOVEITEM:
 			return "onMoveItem";
+		case CREATURE_EVENT_STATSCHANGEEX:
+			return "onStatsChangeEx";
+		case CREATURE_EVENT_EQUIP_ITEM:
+			return "onEquipItem";
+		case CREATURE_EVENT_UNEQUIP_ITEM:
+			return "onUnequipItem";
 		case CREATURE_EVENT_NONE:
 		default:
 			break;
@@ -406,7 +432,7 @@ std::string CreatureEvent::getScriptEventParams() const
 		case CREATURE_EVENT_EXTENDED_OPCODE:
 			return "cid, opcode, buffer";
 		case CREATURE_EVENT_MOVEITEM:
-			return "cid, item, count, toContainer, fromContainer, fromPos, toPos";
+			return "moveItem, frompos, topos, cid";
 		case CREATURE_EVENT_NONE:
 		default:
 			break;
@@ -446,7 +472,7 @@ uint32_t CreatureEvent::executePlayer(Player* player)
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(player->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 			scriptstream << "local cid = " << env->addThing(player) << std::endl;
 
 			if(m_scriptData)
@@ -498,7 +524,7 @@ uint32_t CreatureEvent::executeLogout(Player* player, bool forceLogout)
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(player->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 
 			scriptstream << "local cid = " << env->addThing(player) << std::endl;
 			scriptstream << "local forceLogout = " << (forceLogout ? "true" : "false") << std::endl;
@@ -554,7 +580,7 @@ uint32_t CreatureEvent::executeChannel(Player* player, uint16_t channelId, Users
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(player->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 			scriptstream << "local cid = " << env->addThing(player) << std::endl;
 
 			scriptstream << "local channel = " << channelId << std::endl;
@@ -622,7 +648,7 @@ uint32_t CreatureEvent::executeAdvance(Player* player, skills_t skill, uint32_t 
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(player->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 			scriptstream << "local cid = " << env->addThing(player) << std::endl;
 
 			scriptstream << "local skill = " << skill << std::endl;
@@ -683,7 +709,7 @@ uint32_t CreatureEvent::executeMail(Player* player, Player* target, Item* item, 
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(player->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 			scriptstream << "local cid = " << env->addThing(player) << std::endl;
 			scriptstream << "local target = " << env->addThing(target) << std::endl;
 
@@ -744,7 +770,7 @@ uint32_t CreatureEvent::executeTradeRequest(Player* player, Player* target, Item
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(player->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 			scriptstream << "local cid = " << env->addThing(player) << std::endl;
 
 			scriptstream << "local target = " << env->addThing(target) << std::endl;
@@ -802,7 +828,7 @@ uint32_t CreatureEvent::executeTradeAccept(Player* player, Player* target, Item*
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(player->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 			scriptstream << "local cid = " << env->addThing(player) << std::endl;
 
 			scriptstream << "local target = " << env->addThing(target) << std::endl;
@@ -861,7 +887,7 @@ uint32_t CreatureEvent::executeLook(Player* player, Thing* thing, const Position
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(player->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 			scriptstream << "local cid = " << env->addThing(player) << std::endl;
 
 			scriptstream << "local thing = " << env->addThing(thing) << std::endl;
@@ -922,7 +948,7 @@ uint32_t CreatureEvent::executeSpawn(Monster* monster)
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(monster->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 			scriptstream << "local cid = " << env->addThing(monster) << std::endl;
 
 			if(m_scriptData)
@@ -974,7 +1000,7 @@ uint32_t CreatureEvent::executeDirection(Creature* creature, Direction old, Dire
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(creature->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 			scriptstream << "local cid = " << env->addThing(creature) << std::endl;
 
 			scriptstream << "local old = " << old << std::endl;
@@ -1032,7 +1058,7 @@ uint32_t CreatureEvent::executeOutfit(Creature* creature, const Outfit_t& old, c
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(creature->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 			scriptstream << "local cid = " << env->addThing(creature) << std::endl;
 
 			env->streamOutfit(scriptstream, "old", old);
@@ -1090,7 +1116,7 @@ uint32_t CreatureEvent::executeThink(Creature* creature, uint32_t interval)
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(creature->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 
 			scriptstream << "local cid = " << env->addThing(creature) << std::endl;
 			scriptstream << "local interval = " << interval << std::endl;
@@ -1146,7 +1172,7 @@ uint32_t CreatureEvent::executeStatsChange(Creature* creature, Creature* attacke
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(creature->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 
 			scriptstream << "local cid = " << env->addThing(creature) << std::endl;
 			scriptstream << "local attacker = " << env->addThing(attacker) << std::endl;
@@ -1210,7 +1236,7 @@ uint32_t CreatureEvent::executeCombatArea(Creature* creature, Tile* tile, bool a
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(creature->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 			scriptstream << "local cid = " << env->addThing(creature) << std::endl;
 
 			env->streamThing(scriptstream, "ground", tile->ground, env->addThing(tile->ground));
@@ -1233,7 +1259,7 @@ uint32_t CreatureEvent::executeCombatArea(Creature* creature, Tile* tile, bool a
 		else
 		{
 			#ifdef __DEBUG_LUASCRIPTS__
-			std::stringstream desc;
+			std::ostringstream desc;
 			desc << creature->getName();
 			env->setEvent(desc.str());
 			#endif
@@ -1271,7 +1297,7 @@ uint32_t CreatureEvent::executeCombat(Creature* creature, Creature* target, bool
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(creature->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 
 			scriptstream << "local cid = " << env->addThing(creature) << std::endl;
 			scriptstream << "local target = " << env->addThing(target) << std::endl;
@@ -1293,7 +1319,7 @@ uint32_t CreatureEvent::executeCombat(Creature* creature, Creature* target, bool
 		else
 		{
 			#ifdef __DEBUG_LUASCRIPTS__
-			std::stringstream desc;
+			std::ostringstream desc;
 			desc << creature->getName();
 			env->setEvent(desc.str());
 			#endif
@@ -1329,7 +1355,7 @@ uint32_t CreatureEvent::executeCast(Creature* creature, Creature* target/* = NUL
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(creature->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 
 			scriptstream << "local cid = " << env->addThing(creature) << std::endl;
 			scriptstream << "local target = ";
@@ -1354,7 +1380,7 @@ uint32_t CreatureEvent::executeCast(Creature* creature, Creature* target/* = NUL
 		else
 		{
 			#ifdef __DEBUG_LUASCRIPTS__
-			std::stringstream desc;
+			std::ostringstream desc;
 			desc << creature->getName();
 			env->setEvent(desc.str());
 			#endif
@@ -1399,7 +1425,7 @@ uint32_t CreatureEvent::executeKill(Creature* creature, Creature* target, const 
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(creature->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 			scriptstream << "local cid = " << env->addThing(creature) << std::endl;
 
 			scriptstream << "local target = " << env->addThing(target) << std::endl;
@@ -1423,7 +1449,7 @@ uint32_t CreatureEvent::executeKill(Creature* creature, Creature* target, const 
 		else
 		{
 			#ifdef __DEBUG_LUASCRIPTS__
-			std::stringstream desc;
+			std::ostringstream desc;
 			desc << creature->getName();
 			env->setEvent(desc.str());
 			#endif
@@ -1462,7 +1488,7 @@ uint32_t CreatureEvent::executeDeath(Creature* creature, Item* corpse, DeathList
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(creature->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 			scriptstream << "local cid = " << env->addThing(creature) << std::endl;
 
 			env->streamThing(scriptstream, "corpse", corpse, env->addThing(corpse));
@@ -1542,7 +1568,7 @@ uint32_t CreatureEvent::executePrepareDeath(Creature* creature, DeathList deathL
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(creature->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 			scriptstream << "local cid = " << env->addThing(creature) << std::endl;
 
 			scriptstream << "local deathList = {}" << std::endl;
@@ -1621,7 +1647,7 @@ uint32_t CreatureEvent::executeTextEdit(Player* player, Item* item, const std::s
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(player->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 			scriptstream << "local cid = " << env->addThing(player) << std::endl;
 
 			env->streamThing(scriptstream, "item", item, env->addThing(item));
@@ -1679,7 +1705,7 @@ uint32_t CreatureEvent::executeHouseEdit(Player* player, uint32_t houseId, uint3
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(player->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 			scriptstream << "local cid = " << env->addThing(player) << std::endl;
 			scriptstream << "local house = " << houseId << std::endl;
 
@@ -1738,7 +1764,7 @@ uint32_t CreatureEvent::executeReportBug(Player* player, const std::string& comm
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(player->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 
 			scriptstream << "local cid = " << env->addThing(player) << std::endl;
 			scriptstream << "local comment = " << comment << std::endl;
@@ -1795,7 +1821,7 @@ uint32_t CreatureEvent::executeReportViolation(Player* player, ReportType_t type
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(player->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 
 			scriptstream << "local cid = " << env->addThing(player) << std::endl;
 			scriptstream << "local type = " << type << std::endl;
@@ -1863,7 +1889,7 @@ uint32_t CreatureEvent::executeChannelRequest(Player* player, const std::string&
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(player->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 
 			scriptstream << "local cid = " << env->addThing(player) << std::endl;
 			if(!isPrivate)
@@ -1927,7 +1953,7 @@ uint32_t CreatureEvent::executePush(Player* player, Creature* target, Tile* tile
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(player->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 			scriptstream << "local cid = " << env->addThing(player) << std::endl;
 
 			scriptstream << "local target = " << env->addThing(target) << std::endl;
@@ -1950,7 +1976,7 @@ uint32_t CreatureEvent::executePush(Player* player, Creature* target, Tile* tile
 		else
 		{
 			#ifdef __DEBUG_LUASCRIPTS__
-			std::stringstream desc;
+			std::ostringstream desc;
 			desc << player->getName();
 			env->setEvent(desc.str());
 			#endif
@@ -1988,7 +2014,7 @@ uint32_t CreatureEvent::executeThrow(Player* player, Item* item, const Position&
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(player->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 			scriptstream << "local cid = " << env->addThing(player) << std::endl;
 
 			env->streamThing(scriptstream, "item", item, env->addThing(item));
@@ -2011,7 +2037,7 @@ uint32_t CreatureEvent::executeThrow(Player* player, Item* item, const Position&
 		else
 		{
 			#ifdef __DEBUG_LUASCRIPTS__
-			std::stringstream desc;
+			std::ostringstream desc;
 			desc << player->getName();
 			env->setEvent(desc.str());
 			#endif
@@ -2049,7 +2075,7 @@ uint32_t CreatureEvent::executeAction(Creature* creature, Creature* target)
 		if(m_scripted == EVENT_SCRIPT_BUFFER)
 		{
 			env->setRealPos(creature->getPosition());
-			std::stringstream scriptstream;
+			std::ostringstream scriptstream;
 
 			scriptstream << "local cid = " << env->addThing(creature) << std::endl;
 			scriptstream << "local target = " << env->addThing(target) << std::endl;
@@ -2070,7 +2096,7 @@ uint32_t CreatureEvent::executeAction(Creature* creature, Creature* target)
 		else
 		{
 			#ifdef __DEBUG_LUASCRIPTS__
-			std::stringstream desc;
+			std::ostringstream desc;
 			desc << creature->getName();
 			env->setEvent(desc.str());
 			#endif
@@ -2096,115 +2122,188 @@ uint32_t CreatureEvent::executeAction(Creature* creature, Creature* target)
 	}
 }
 
-uint32_t CreatureEvent::executeExtendedOpcode(Creature* creature, uint8_t opcode, const std::string& buffer) {
+uint32_t CreatureEvent::executeExtendedOpcode(Creature* creature, uint8_t opcode, const std::string& buffer)
+{
 	//onExtendedOpcode(cid, opcode, buffer)
-	if (m_interface->reserveEnv()) {
+	if(m_interface->reserveEnv())
+	{
 		ScriptEnviroment* env = m_interface->getEnv();
-		if (m_scripted == EVENT_SCRIPT_BUFFER) {
+		if(m_scripted == EVENT_SCRIPT_BUFFER)
+		{
 			env->setRealPos(creature->getPosition());
-			std::stringstream scriptstream;
-			scriptstream << "local cid = " << env->addThing(creature) << std::endl;scriptstream << "local opcode = " << (int)opcode << std::endl;
+			std::ostringstream scriptstream;
+			scriptstream << "local cid = " << env->addThing(creature) << std::endl;
+			scriptstream << "local opcode = " << (int)opcode << std::endl;
 			scriptstream << "local buffer = " << buffer.c_str() << std::endl;
+
 			scriptstream << m_scriptData;
 			bool result = true;
-
-			if (m_interface->loadBuffer(scriptstream.str())) {
+			if(m_interface->loadBuffer(scriptstream.str()))
+			{
 				lua_State* L = m_interface->getState();
 				result = m_interface->getGlobalBool(L, "_result", true);
 			}
 
 			m_interface->releaseEnv();
-
 			return result;
 		}
-		else {
-#ifdef __DEBUG_LUASCRIPTS__char 
-			desc[35];
-			sprintf(desc, "%s", player->getName().c_str());
+		else
+		{
+			#ifdef __DEBUG_LUASCRIPTS__
+			char desc[35];
+			sprintf(desc, "%s", creature->getName().c_str());
 			env->setEvent(desc);
-#endif
+			#endif
 
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(creature->getPosition());
+
 			lua_State* L = m_interface->getState();
 			m_interface->pushFunction(m_scriptId);
 			lua_pushnumber(L, env->addThing(creature));
 			lua_pushnumber(L, opcode);
 			lua_pushlstring(L, buffer.c_str(), buffer.length());
+
 			bool result = m_interface->callFunction(3);
 			m_interface->releaseEnv();
 			return result;
 		}
 	}
-	else {
+	else
+	{
 		std::cout << "[Error - CreatureEvent::executeRemoved] Call stack overflow." << std::endl;
 		return 0;
 	}
 }
 
-uint32_t CreatureEvent::executeMoveItem(Player* player, Item* item, uint8_t count, const Position& fromPos, const Position& toPos, Item* toContainer, Item* fromContainer, int16_t fstack)
+uint32_t CreatureEvent::executeMoveItem(Creature* actor, Item* item, const Position& frompos, const Position& pos)
 {
-    //onMoveItem(cid, item, count, toContainer, fromContainer, fromPos, toPos)
-    if(m_interface->reserveEnv())
-    {
-        ScriptEnviroment* env = m_interface->getEnv();
-        if(m_scripted == EVENT_SCRIPT_BUFFER)
-        {
-            env->setRealPos(player->getPosition());
-            std::stringstream scriptstream;
-            scriptstream << "local cid = " << env->addThing(player) << std::endl;
- 
-            env->streamThing(scriptstream, "item", item, env->addThing(item));
-            scriptstream << "local count = " << count << std::endl;
-            env->streamThing(scriptstream, "toContainer", toContainer, env->addThing(toContainer));
-            env->streamThing(scriptstream, "fromContainer", fromContainer, env->addThing(fromContainer));
-            env->streamPosition(scriptstream, "fromPos", fromPos, fstack);
-            env->streamPosition(scriptstream, "toPos", toPos, 0);
- 
- 
-            scriptstream << m_scriptData;
-            bool result = true;
-            if(m_interface->loadBuffer(scriptstream.str()))
-            {
-                lua_State* L = m_interface->getState();
-                result = m_interface->getGlobalBool(L, "_result", true);
-            }
- 
-            m_interface->releaseEnv();
-            return result;
-        }
-        else
-        {
-            #ifdef __DEBUG_LUASCRIPTS__
-            char desc[30];
-            sprintf(desc, "%s", player->getName().c_str());
-            env->setEvent(desc);
-            #endif
- 
-            env->setScriptId(m_scriptId, m_interface);
-            env->setRealPos(player->getPosition());
-                    
-            lua_State* L = m_interface->getState();
-            m_interface->pushFunction(m_scriptId);
- 
-            lua_pushnumber(L, env->addThing(player));
- 
-            m_interface->pushThing(L, item, env->addThing(item));
-            lua_pushnumber(L, count);
-            m_interface->pushThing(L, toContainer, env->addThing(toContainer));
-            m_interface->pushThing(L, fromContainer, env->addThing(fromContainer));
-            m_interface->pushPosition(L, fromPos, fstack);
-            m_interface->pushPosition(L, toPos, 0);
- 
-            bool result = m_interface->callFunction(7);
-            m_interface->releaseEnv();
-            return result;
-        }
-    }
-    else
-    {
-        std::clog << "[Error - CreatureEvent::executeMoveItem] Call stack overflow." << std::endl;
-        return 0;
-    }
+	//onMoveItem(moveItem, frompos, position, cid)
+	if(m_interface->reserveEnv())
+	{
+		ScriptEnviroment* env = m_interface->getEnv();
+		if(m_scripted == EVENT_SCRIPT_BUFFER)
+		{
+			env->setRealPos(pos);
+			std::ostringstream scriptstream;
+
+			env->streamThing(scriptstream, "moveItem", item, env->addThing(item));
+			env->streamPosition(scriptstream, "position", frompos, 0);
+
+			env->streamPosition(scriptstream, "position", pos, 0);
+			scriptstream << "local cid = " << env->addThing(actor) << std::endl;
+
+			scriptstream << m_scriptData;
+			bool result = true;
+			if(m_interface->loadBuffer(scriptstream.str()))
+			{
+				lua_State* L = m_interface->getState();
+				result = m_interface->getGlobalBool(L, "_result", true);
+			}
+
+			m_interface->releaseEnv();
+			return result;
+		}
+		else
+		{
+			#ifdef __DEBUG_LUASCRIPTS__
+			char desc[35];
+			sprintf(desc, "%s", player->getName().c_str());
+			env->setEventDesc(desc);
+			#endif
+
+			env->setScriptId(m_scriptId, m_interface);
+			env->setRealPos(pos);
+
+			lua_State* L = m_interface->getState();
+			m_interface->pushFunction(m_scriptId);
+
+			LuaInterface::pushThing(L, item, env->addThing(item));
+			LuaInterface::pushPosition(L, frompos, 0);
+			LuaInterface::pushPosition(L, pos, 0);
+
+			lua_pushnumber(L, env->addThing(actor));
+			bool result = m_interface->callFunction(4);
+			m_interface->releaseEnv();
+			return result;
+		}
+	}
+	else
+	{
+		std::clog << "[Error - CreatureEvent::executeMoveItem] Call stack overflow." << std::endl;
+		return 0;
+	}
 }
 
+void CreatureEvent::executeStatsChangeEx(Creature* creature, Creature* attacker,
+	StatsChange_t statType, CombatType_t combat, int32_t& value, Origin_t origin,
+	bool inherited)
+{
+	//onStatsChangeEx(cid, attacker, statType, combat, value, origin, inherited)
+	if (m_scripted == EVENT_SCRIPT_BUFFER) {
+		std::cout << "[Error - CreatureEvent::executeStatsChangeEx] Mods are not supported." << std::endl;
+		return;
+	}
+
+	if (!m_interface->reserveEnv()) {
+		std::cout << "[Error - CreatureEvent::executeStatsChangeEx] Call stack overflow." << std::endl;
+		return;
+	}
+
+	ScriptEnviroment* env = m_interface->getEnv();
+	env->setScriptId(m_scriptId, m_interface);
+	env->setRealPos(creature->getPosition());
+
+	lua_State* L = m_interface->getState();
+	m_interface->pushFunction(m_scriptId);
+
+	lua_pushnumber(L, env->addThing(creature));
+	lua_pushnumber(L, env->addThing(attacker));
+	lua_pushnumber(L, statType);
+	lua_pushnumber(L, combat);
+	lua_pushnumber(L, value);
+	lua_pushnumber(L, origin);
+	lua_pushboolean(L, inherited);
+
+	int params = lua_gettop(L);
+	if (lua_pcall(L, 7, 1, 0) == 0) {
+		value = LuaInterface::popNumber(L);
+	} else {
+		LuaInterface::error(nullptr, LuaInterface::popString(L));
+	}
+
+	if ((lua_gettop(L) + 7 + 1) != params) {
+		LuaInterface::error(__FUNCTION__, "Stack size changed!");
+	}
+
+	m_interface->releaseEnv();
+}
+
+void CreatureEvent::executeEquipItemEvent(Player* player, Item* item, uint8_t slot)
+{
+	//onEquipItem(cid, item, slot)
+	//onUnEquipItem(cid, item, slot)
+	if (m_scripted == EVENT_SCRIPT_BUFFER) {
+		std::cout << "[Error - CreatureEvent::executeEquipItemEvent] Mods are not supported." << std::endl;
+		return;
+	}
+
+	if (!m_interface->reserveEnv()) {
+		std::cout << "[Error - CreatureEvent::executeEquipItemEvent] Call stack overflow." << std::endl;
+		return;
+	}
+
+	ScriptEnviroment* env = m_interface->getEnv();
+	env->setScriptId(m_scriptId, m_interface);
+	env->setRealPos(player->getPosition());
+
+	lua_State* L = m_interface->getState();
+	m_interface->pushFunction(m_scriptId);
+
+	lua_pushnumber(L, env->addThing(player));
+	LuaInterface::pushThing(L, item);
+	lua_pushnumber(L, slot);
+
+	m_interface->callFunction(3);
+	m_interface->releaseEnv();
+}

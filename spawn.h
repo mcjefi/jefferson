@@ -79,8 +79,6 @@ class Spawn
 		bool addMonster(const std::string& _name, const Position& _pos, Direction _dir, uint32_t _interval);
 		void removeMonster(Monster* monster);
 
-		void startEffect(uint32_t spawnId, MonsterType* mType, const Position& pos, Direction dir, uint8_t count);
-
 		Position getPosition() const {return centerPos;}
 		uint32_t getInterval() const {return interval;}
 

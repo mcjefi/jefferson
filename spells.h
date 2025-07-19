@@ -67,6 +67,7 @@ class Spells : public BaseEvents
 
 		RunesMap runes;
 		InstantsMap instants;
+		InstantsMap instantsWithParam;
 
 		uint32_t spellId;
 		friend class CombatSpell;
@@ -130,8 +131,6 @@ class Spell : public BaseSpell
 		int32_t getMana() const {return mana;}
 		int32_t getManaPercent() const {return manaPercent;}
 		uint32_t getExhaustion() const {return exhaustion;}
-		std::string getCooldownID() const { return cooldownID; }
-		int64_t getCooldownValue() const { return cooldownValue; }
 		SpellGroup getGroupExhaustions() const {return groupExhaustions;}
 		uint16_t getId() const {return spellId;}
 		void setId(uint16_t id) {spellId = id;}
@@ -156,8 +155,6 @@ class Spell : public BaseSpell
 		uint16_t spellId;
 
 	protected:
-	    std::string cooldownID;
-		int64_t cooldownValue;
 		int32_t level;
 		int32_t magLevel;
 		int32_t skills[SKILL_LAST + 1];
@@ -166,9 +163,8 @@ class Spell : public BaseSpell
 		bool learnable;
 		bool enabled;
 
-		int32_t mana;
 		std::string exhaustedGroup;
-		std::string desc;
+		int32_t mana;
 		int32_t manaPercent;
 		int32_t soul;
 		int32_t range;

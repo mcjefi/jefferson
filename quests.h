@@ -43,7 +43,7 @@ class Mission
 		bool isCompleted(Player* player);
 		bool isNotifying() const {return notify;}
 
-		std::string getName(Player* player) {return (isCompleted(player) ? (Localization::t(player->getLanguage(), name) + Localization::t(player->getLanguage(), " (completed)")) : Localization::t(player->getLanguage(), name));}
+		std::string getName(Player* player) {return (isCompleted(player) ? (name + " (completed)") : name);}
 		std::string getDescription(Player* player);
 
 		int32_t getStartValue() {return startValue;}

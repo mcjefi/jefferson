@@ -112,8 +112,8 @@ class TalkAction : public Event
 		static TalkFunction banishmentInfo;
 		static TalkFunction diagnostics;
 		static TalkFunction ghost;
-		static TalkFunction software;
 		static TalkFunction autoLoot; //autoloot by naze
+		static TalkFunction software;
 
 		std::string m_words, m_functionName;
 		TalkFunction* m_function;

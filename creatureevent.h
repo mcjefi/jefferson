@@ -22,43 +22,46 @@
 #include "baseevents.h"
 #include "tile.h"
 
-enum CreatureEventType_t : uint64_t
+enum CreatureEventType_t
 {
-	CREATURE_EVENT_NONE = 0,
-	CREATURE_EVENT_LOGIN = 1,
-	CREATURE_EVENT_LOGOUT = 2,
-	CREATURE_EVENT_SPAWN_SINGLE = 3,
-	CREATURE_EVENT_SPAWN_GLOBAL = 4,
-	CREATURE_EVENT_CHANNEL_JOIN = 5,
-	CREATURE_EVENT_CHANNEL_LEAVE = 6,
-	CREATURE_EVENT_CHANNEL_REQUEST = 7,
-	CREATURE_EVENT_ADVANCE = 8,
-	CREATURE_EVENT_LOOK = 9,
-	CREATURE_EVENT_DIRECTION = 10,
-	CREATURE_EVENT_OUTFIT = 11,
-	CREATURE_EVENT_MAIL_SEND = 12,
-	CREATURE_EVENT_MAIL_RECEIVE = 13,
-	CREATURE_EVENT_TRADE_REQUEST = 14,
-	CREATURE_EVENT_TRADE_ACCEPT = 15,
-	CREATURE_EVENT_TEXTEDIT = 16,
-	CREATURE_EVENT_HOUSEEDIT = 17,
-	CREATURE_EVENT_REPORTBUG = 18,
-	CREATURE_EVENT_REPORTVIOLATION = 19,
-	CREATURE_EVENT_THINK = 20,
-	CREATURE_EVENT_STATSCHANGE = 21,
-	CREATURE_EVENT_COMBAT_AREA = 22,
-	CREATURE_EVENT_THROW = 23,
-	CREATURE_EVENT_PUSH = 24,
-	CREATURE_EVENT_TARGET = 25,
-	CREATURE_EVENT_FOLLOW = 26,
-	CREATURE_EVENT_COMBAT = 27,
-	CREATURE_EVENT_ATTACK = 28,
-	CREATURE_EVENT_CAST = 29,
-	CREATURE_EVENT_KILL = 30,
-	CREATURE_EVENT_DEATH = 31,
-	CREATURE_EVENT_PREPAREDEATH = 32,
-	CREATURE_EVENT_EXTENDED_OPCODE = 33, // otclient additional network opcodes
-	CREATURE_EVENT_MOVEITEM = 34
+	CREATURE_EVENT_NONE,
+	CREATURE_EVENT_LOGIN,
+	CREATURE_EVENT_LOGOUT,
+	CREATURE_EVENT_SPAWN_SINGLE,
+	CREATURE_EVENT_SPAWN_GLOBAL,
+	CREATURE_EVENT_CHANNEL_JOIN,
+	CREATURE_EVENT_CHANNEL_LEAVE,
+	CREATURE_EVENT_CHANNEL_REQUEST,
+	CREATURE_EVENT_ADVANCE,
+	CREATURE_EVENT_LOOK,
+	CREATURE_EVENT_DIRECTION,
+	CREATURE_EVENT_OUTFIT,
+	CREATURE_EVENT_MAIL_SEND,
+	CREATURE_EVENT_MAIL_RECEIVE,
+	CREATURE_EVENT_TRADE_REQUEST,
+	CREATURE_EVENT_TRADE_ACCEPT,
+	CREATURE_EVENT_TEXTEDIT,
+	CREATURE_EVENT_HOUSEEDIT,
+	CREATURE_EVENT_REPORTBUG,
+	CREATURE_EVENT_REPORTVIOLATION,
+	CREATURE_EVENT_THINK,
+	CREATURE_EVENT_STATSCHANGE,
+	CREATURE_EVENT_COMBAT_AREA,
+	CREATURE_EVENT_THROW,
+	CREATURE_EVENT_PUSH,
+	CREATURE_EVENT_TARGET,
+	CREATURE_EVENT_FOLLOW,
+	CREATURE_EVENT_COMBAT,
+	CREATURE_EVENT_ATTACK,
+	CREATURE_EVENT_CAST,
+	CREATURE_EVENT_KILL,
+	CREATURE_EVENT_DEATH,
+	CREATURE_EVENT_PREPAREDEATH,
+	CREATURE_EVENT_EXTENDED_OPCODE, // otclient additional network opcodes
+	CREATURE_EVENT_MOVEITEM,
+	CREATURE_EVENT_STATSCHANGEEX,
+	CREATURE_EVENT_EQUIP_ITEM,
+	CREATURE_EVENT_UNEQUIP_ITEM
 };
 
 enum StatsChange_t
@@ -82,6 +85,7 @@ class CreatureEvents : public BaseEvents
 		bool playerLogin(Player* player);
 		bool playerLogout(Player* player, bool forceLogout);
 		bool monsterSpawn(Monster* monster);
+		uint32_t executeMoveItems(Creature* actor, Item* item, const Position& frompos, const Position& pos);
 
 		CreatureEvent* getEventByName(const std::string& name);
 		CreatureEventType_t getType(const std::string& type);
@@ -151,7 +155,10 @@ class CreatureEvent : public Event
 		uint32_t executeDeath(Creature* creature, Item* corpse, DeathList deathList);
 		uint32_t executePrepareDeath(Creature* creature, DeathList deathList);
 		uint32_t executeExtendedOpcode(Creature* creature, uint8_t opcode, const std::string& buffer);
-		uint32_t executeMoveItem(Player* player, Item* item, uint8_t count, const Position& fromPos, const Position& toPos, Item* toContainer, Item* fromContainer, int16_t fstack);
+		uint32_t executeMoveItem(Creature* actor, Item* item, const Position& frompos, const Position& pos);
+		
+		void executeStatsChangeEx(Creature* creature, Creature* attacker, StatsChange_t statType, CombatType_t combat, int32_t& value, Origin_t origin, bool inherited);
+		void executeEquipItemEvent(Player* player, Item* item, uint8_t slot);
 		//
 
 	protected:

@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////////////////////////////////////////////////////////////////////////
-#include <iostream>
-
 #include "otpch.h"
 #include <iomanip>
 
@@ -34,11 +32,7 @@
 
 #include "configmanager.h"
 #include "game.h"
-#include "resources.h"
 
-#if defined(WINDOWS) && !defined(_CONSOLE)
-#include "gui.h"
-#endif
 
 extern ConfigManager g_config;
 extern Game g_game;
@@ -68,11 +62,7 @@ void ProtocolLogin::disconnectClient(uint8_t error, const char* message)
 
 void ProtocolLogin::onRecvFirstMessage(NetworkMessage& msg)
 {
-	if(
-#if defined(WINDOWS) && !defined(_CONSOLE)
-		!GUI::getInstance()->m_connections ||
-#endif
-		g_game.getGameState() == GAMESTATE_SHUTDOWN)
+	if(g_game.getGameState() == GAMESTATE_SHUTDOWN)
 	{
 		getConnection()->close();
 		return;
@@ -80,15 +70,7 @@ void ProtocolLogin::onRecvFirstMessage(NetworkMessage& msg)
 
 	uint32_t clientIp = getConnection()->getIP();
 	msg.skipBytes(2); // client platform
-	// uint16_t operatingSystem = msg.get<uint16_t>();
-	// msg.skipBytes(2);
 	uint16_t version = msg.get<uint16_t>();
-	int16_t lang = -1;
-    // if ((operatingSystem >= CLIENTOS_OTCLIENT_WINDOWS && operatingSystem <= CLIENTOS_OTCLIENT_MAC) && version >= 293) {
-		// std::clog << ">> Set Language: 2.1. Cliente " << operatingSystem << std::endl;
-        // lang = msg.getByte();
-		// std::clog << ">> Set Language: 2.2. Cliente " << operatingSystem << std::endl;
-    // }
 
 #ifdef CLIENT_VERSION_DATA
 	uint32_t datSignature = msg.get<uint32_t>();
@@ -175,11 +157,6 @@ void ProtocolLogin::onRecvFirstMessage(NetworkMessage& msg)
 		disconnectClient(0x0A, "Invalid account name or password.");
 		return;
 	}
-	
-	if (lang != -1 && lang != account.language) {
-	    account.language = (LocalizationLang_t)lang;
-	    IOLoginData::getInstance()->setAccountLanguage(account.number, (LocalizationLang_t)lang);	
-    }
 
 	Ban ban;
 	ban.value = account.number;
@@ -194,7 +171,7 @@ void ProtocolLogin::onRecvFirstMessage(NetworkMessage& msg)
 		else
 			IOLoginData::getInstance()->getNameByGuid(ban.adminId, name_, true);
 
-		std::stringstream ss;
+		std::ostringstream ss;
 		ss << "Your account has been " << (deletion ? "deleted" : "banished") << " at:\n" << formatDateEx(ban.added, "%d %b %Y").c_str()
 			<< " by: " << name_.c_str() << ".\nThe comment given was:\n" << ban.comment.c_str() << ".\nYour " << (deletion ?
 			"account won't be undeleted" : "banishment will be lifted at:\n") << (deletion ? "" : formatDateEx(ban.expires).c_str()) << ".";
@@ -243,30 +220,19 @@ void ProtocolLogin::onRecvFirstMessage(NetworkMessage& msg)
 	}
 
 	char motd[1300];
-	if (account.name == "10" && account.name != "0")
-	{
-		srand(time(NULL));
-		int random_number = std::rand();
-		sprintf(motd, "%d\nWelcome to cast system!\n\n Do you know you can use CTRL + ARROWS\n to switch casts?\n\nVocê sabia que pode usar CTRL + SETAS\n para alternar casts?", random_number);
-		output->addString(motd);
-	}
-	else
-	{
-		sprintf(motd, "%d\n%s", g_game.getMotdId(), g_config.getString(ConfigManager::MOTD).c_str());
-		output->addString(motd);
-	}
+	sprintf(motd, "%d\n%s", g_game.getMotdId(), g_config.getString(ConfigManager::MOTD).c_str());
+	output->addString(motd);
 
 	//Add char list
 	output->addByte(0x64);
-	if(account.name == "10")
+	if (account.name == "10" && account.name != "0")
 	{
 		PlayerVector players;
-		for(AutoList<Player>::iterator it = Player::autoList.begin(); it != Player::autoList.end(); ++it)
+		for (AutoList<Player>::iterator it = Player::autoList.begin(); it != Player::autoList.end(); ++it)
 		{
-			if(!it->second->isRemoved() && it->second->client->isBroadcasting())
+			if (!it->second->isRemoved() && it->second->client->isBroadcasting())
 				players.push_back(it->second);
 		}
-
 		if (!players.size())
 			disconnectClient(0x0A, "There are no livestreams online right now.");
 		else
@@ -276,48 +242,9 @@ void ProtocolLogin::onRecvFirstMessage(NetworkMessage& msg)
 			for (PlayerVector::iterator it = players.begin(); it != players.end(); ++it)
 			{
 				std::ostringstream s;
+				s << (*it)->getLevel();
 				if (!(*it)->client->check(password))
-					s << "* ";
-
-				s << "L." << (*it)->getLevel();
-
-				const uint32_t pVoc = (*it)->getVocationId();
-				std::string voc;
-				switch (pVoc) {
-				case 0:
-					voc = "R";
-					break;
-				case 1:
-					voc = "S";
-					break;
-				case 2:
-					voc = "D";
-					break;
-				case 3:
-					voc = "P";
-					break;
-				case 4:
-					voc = "K";
-					break;
-				case 5:
-					voc = "MS";
-					break;
-				case 6:
-					voc = "ED";
-					break;
-				case 7:
-					voc = "RP";
-					break;
-				case 8:
-					voc = "EK";
-					break;
-				default:
-					voc = "R";
-				}
-				s << " " << voc;
-
-				s << " " << (*it)->client->list().size() << "/50";
-
+					s << "*";
 
 				output->addString((*it)->getName());
 				output->addString(s.str());

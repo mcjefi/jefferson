@@ -23,15 +23,12 @@
 
 #include "protocolgame.h"
 
-
 class Creature;
 class Player;
 class House;
 class Container;
 class Tile;
 class Quest;
-
-
 
 typedef std::map<ProtocolGame*, std::pair<std::string, bool> > SpectatorList;
 typedef std::map<std::string, uint32_t> DataList;
@@ -49,13 +46,8 @@ class Spectators
 
 		void clear(bool full)
 		{
-			for (SpectatorList::iterator it = spectators.begin(); it != spectators.end(); ++it)
-			{
-				if (it->first->is_spectating)
-					it->first->returnPlayer();
-				else
-					it->first->disconnect();
-			}
+			for(SpectatorList::iterator it = spectators.begin(); it != spectators.end(); ++it)
+				it->first->disconnect();
 
 			spectators.clear();
 			mutes.clear();
@@ -71,7 +63,6 @@ class Spectators
 
 		bool check(const std::string& _password);
 		void handle(ProtocolGame* client, const std::string& text, uint16_t channelId);
-		void sendLook(ProtocolGame* client, const Position& pos, uint16_t spriteId, int16_t stackpos);
 		void chat(uint16_t channelId);
 
 		StringVec list()
@@ -100,7 +91,7 @@ class Spectators
 			return false;
 		}
 
-		ProtocolGame_ptr getOwner() const {return owner;}
+		ProtocolGame_ptr getOwner() const { return owner; }
 		void setOwner(ProtocolGame_ptr client) {
 			owner = client;
 		}
@@ -258,6 +249,15 @@ class Spectators
 			owner->sendPing();
 			for(SpectatorList::iterator it = spectators.begin(); it != spectators.end(); ++it)
 				it->first->sendPing();
+		}
+		void sendPingCheck()
+		{
+			if(!owner)
+				return;
+
+			owner->sendPingCheck();
+			for(SpectatorList::iterator it = spectators.begin(); it != spectators.end(); ++it)
+				it->first->sendPingCheck();
 		}
 		void sendCreatureTurn(const Creature* creature, int16_t stackpos)
 		{

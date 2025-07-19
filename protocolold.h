@@ -40,4 +40,3 @@ class ProtocolOld : public Protocol
 };
 
 #endif
-

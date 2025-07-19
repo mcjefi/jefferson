@@ -29,7 +29,6 @@ extern ConfigManager g_config;
 Party::Party(Player* _leader)
 {
 	sharedExpActive = sharedExpEnabled = false;
-	currentExpMultiplier = 1;
 	if(_leader)
 	{
 		leader = _leader;
@@ -108,9 +107,6 @@ bool Party::leave(Player* player)
 	updateIcons(player);
 	clearPlayerPoints(player);
 
-	if (g_config.getBool(ConfigManager::PARTY_VOCATION_MULT))
-		updateExperienceMult();
-
 	char buffer[105];
 	sprintf(buffer, "%s has left the party.", player->getName().c_str());
 
@@ -119,54 +115,6 @@ bool Party::leave(Player* player)
 		disband();
 
 	return true;
-}
-
-void Party::updateExperienceMult()
-{
-	if (!sharedExpActive) {
-		currentExpMultiplier = 1;
-		return;
-	}
-
-	int16_t sorc = 0;
-	int16_t druid = 0;
-	int16_t paladin = 0;
-	int16_t knight = 0;
-
-	//std::clog << "Party Exp1: " << tmpExperience << std::endl;
-
-	if ((leader)->getVocationId() == 1 || (leader)->getVocationId() == 5) // sorc
-		sorc = 1;
-	else if ((leader)->getVocationId() == 2 || (leader)->getVocationId() == 6) // druid
-		druid = 1;
-	else if ((leader)->getVocationId() == 3 || (leader)->getVocationId() == 7) // paladin
-		paladin = 1;
-	else if ((leader)->getVocationId() == 4 || (leader)->getVocationId() == 8) // knight
-		knight = 1;
-
-
-	for (PlayerVector::iterator it = memberList.begin(); it != memberList.end(); ++it)
-	{
-		if ((*it)->getVocationId() == 1 || (*it)->getVocationId() == 5) // sorc
-			sorc = 1;
-		else if ((*it)->getVocationId() == 2 || (*it)->getVocationId() == 6) // druid
-			druid = 1;
-		else if ((*it)->getVocationId() == 3 || (*it)->getVocationId() == 7) // paladin
-			paladin = 1;
-		else if ((*it)->getVocationId() == 4 || (*it)->getVocationId() == 8) // knight
-			knight = 1;
-	}
-
-	int16_t soma = knight + druid + sorc + paladin;
-
-	if (soma == 1)
-		currentExpMultiplier = 1;
-	else if (soma == 2)
-		currentExpMultiplier = g_config.getDouble(ConfigManager::TWO_VOCATION_PARTY);
-	else if (soma == 3)
-		currentExpMultiplier = g_config.getDouble(ConfigManager::THREE_VOCATION_PARTY);
-	else if (soma == 4)
-		currentExpMultiplier = g_config.getDouble(ConfigManager::FOUR_VOCATION_PARTY);
 }
 
 bool Party::passLeadership(Player* player)
@@ -217,10 +165,6 @@ bool Party::join(Player* player)
 
 	updateSharedExperience();
 	updateIcons(player);
-
-	if (g_config.getBool(ConfigManager::PARTY_VOCATION_MULT))
-		updateExperienceMult();
-
 	return true;
 }
 
@@ -333,6 +277,17 @@ void Party::broadcastMessage(MessageClasses messageClass, const std::string& tex
 		(*it)->sendTextMessage(messageClass, text);
 }
 
+void Party::broadcastPartyLoot(MessageClasses messageClass, const std::string& loot)
+{
+	std::string nick;
+	PlayerVector::iterator it;
+    leader->sendChannelMessage(nick, loot, messageClass, g_config.getNumber(ConfigManager::LOOT_CHANNEL));
+    for(it = memberList.begin(); it != memberList.end(); ++it)
+	{
+        (*it)->sendChannelMessage(nick, loot, messageClass, g_config.getNumber(ConfigManager::LOOT_CHANNEL));
+    }
+}
+
 void Party::updateSharedExperience()
 {
 	if(!sharedExpActive)
@@ -341,9 +296,6 @@ void Party::updateSharedExperience()
 	bool result = canEnableSharedExperience();
 	if(result == sharedExpEnabled)
 		return;
-
-	if (g_config.getBool(ConfigManager::PARTY_VOCATION_MULT))
-		updateExperienceMult();
 
 	sharedExpEnabled = result;
 	updateAllIcons();
@@ -380,12 +332,12 @@ void Party::shareExperience(double experience, Creature* target, bool multiplied
 		shareExperience += (experience * ((double)g_config.getNumber(ConfigManager::EXTRA_PARTY_PERCENT) / 100));
 
 	shareExperience /= memberList.size() + 1;
-	double tmpExperience = shareExperience * currentExpMultiplier; //we need this, as onGainSharedExperience increases the value
+	double tmpExperience = shareExperience; //we need this, as onGainSharedExperience increases the value
 
 	leader->onGainSharedExperience(tmpExperience, target, multiplied);
 	for(PlayerVector::iterator it = memberList.begin(); it != memberList.end(); ++it)
 	{
-		tmpExperience = shareExperience * currentExpMultiplier;
+		tmpExperience = shareExperience;
 		(*it)->onGainSharedExperience(tmpExperience, target, multiplied);
 	}
 }

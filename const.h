@@ -21,130 +21,16 @@
 
 #define NETWORKMESSAGE_MAXSIZE 65500
 
-enum GameFeature {
-	GameProtocolChecksum = 1,
-	GameAccountNames = 2,
-	GameChallengeOnLogin = 3,
-	GamePenalityOnDeath = 4,
-	GameNameOnNpcTrade = 5,
-	GameDoubleFreeCapacity = 6,
-	GameDoubleExperience = 7,
-	GameTotalCapacity = 8,
-	GameSkillsBase = 9,
-	GamePlayerRegenerationTime = 10,
-	GameChannelPlayerList = 11,
-	GamePlayerMounts = 12,
-	GameEnvironmentEffect = 13,
-	GameCreatureEmblems = 14,
-	GameItemAnimationPhase = 15,
-	GameMagicEffectU16 = 16,
-	GamePlayerMarket = 17,
-	GameSpritesU32 = 18,
-	GameTileAddThingWithStackpos = 19,
-	GameOfflineTrainingTime = 20,
-	GamePurseSlot = 21,
-	GameFormatCreatureName = 22,
-	GameSpellList = 23,
-	GameClientPing = 24,
-	GameExtendedClientPing = 25,
-	GameDoubleHealth = 28,
-	GameDoubleSkills = 29,
-	GameChangeMapAwareRange = 30,
-	GameMapMovePosition = 31,
-	GameAttackSeq = 32,
-	GameBlueNpcNameColor = 33,
-	GameDiagonalAnimatedText = 34,
-	GameLoginPending = 35,
-	GameNewSpeedLaw = 36,
-	GameForceFirstAutoWalkStep = 37,
-	GameMinimapRemove = 38,
-	GameDoubleShopSellAmount = 39,
-	GameContainerPagination = 40,
-	GameThingMarks = 41,
-	GameLooktypeU16 = 42,
-	GamePlayerStamina = 43,
-	GamePlayerAddons = 44,
-	GameMessageStatements = 45,
-	GameMessageLevel = 46,
-	GameNewFluids = 47,
-	GamePlayerStateU16 = 48,
-	GameNewOutfitProtocol = 49,
-	GamePVPMode = 50,
-	GameWritableDate = 51,
-	GameAdditionalVipInfo = 52,
-	GameBaseSkillU16 = 53,
-	GameCreatureIcons = 54,
-	GameHideNpcNames = 55,
-	GameSpritesAlphaChannel = 56,
-	GamePremiumExpiration = 57,
-	GameBrowseField = 58,
-	GameEnhancedAnimations = 59,
-	GameOGLInformation = 60,
-	GameMessageSizeCheck = 61,
-	GamePreviewState = 62,
-	GameLoginPacketEncryption = 63,
-	GameClientVersion = 64,
-	GameContentRevision = 65,
-	GameExperienceBonus = 66,
-	GameAuthenticator = 67,
-	GameUnjustifiedPoints = 68,
-	GameSessionKey = 69,
-	GameDeathType = 70,
-	GameIdleAnimations = 71,
-	GameKeepUnawareTiles = 72,
-	GameIngameStore = 73,
-	GameIngameStoreHighlights = 74,
-	GameIngameStoreServiceType = 75,
-	GameAdditionalSkills = 76,
-	GameDistanceEffectU16 = 77,
-	GamePrey = 78,
-	GameDoubleMagicLevel = 79,
+enum OperatingSystem_t
+{
+	CLIENTOS_LINUX = 1,
+	CLIENTOS_WINDOWS = 2,
 
-	GameExtendedOpcode = 80,
-	GameMinimapLimitedToSingleFloor = 81,
-	GameSendWorldName = 82,
-
-	GameDoubleLevel = 83,
-	GameDoubleSoul = 84,
-	GameDoublePlayerGoodsMoney = 85,
-	GameCreatureWalkthrough = 86,
-	GameDoubleTradeMoney = 87,
-	GameSequencedPackets = 88,
-	GameTibia12Protocol = 89,
-
-	// 90-99 otclientv8 features
-	GameNewWalking = 90,
-	GameSlowerManualWalking = 91,
-
-	GameItemTooltip = 93,
-
-	GameBot = 95,
-	GameBiggerMapCache = 96,
-	GameForceLight = 97,
-	GameNoDebug = 98,
-	GameBotProtection = 99,
-
-	// Custom features for customer
-	GameFasterAnimations = 101,
-	GameCenteredOutfits = 102,
-	GameSendIdentifiers = 103,
-	GameWingsAndAura = 104,
-	GamePlayerStateU32 = 105,
-	GameOutfitShaders = 106,
-
-	// advanced features
-	GamePacketSizeU32 = 110,
-	GamePacketCompression = 111,
-
-	LastGameFeature = 120
-};
-
-enum OperatingSystem_t {
-	CLIENTOS_LINUX = 0x01,
-	CLIENTOS_WINDOWS = 0x02,
-	CLIENTOS_OTCLIENT_LINUX = 0x0A,
-	CLIENTOS_OTCLIENT_WINDOWS = 0x0B,
-	CLIENTOS_OTCLIENT_MAC = 0x0C
+	CLIENTOS_SPECIAL = 4,
+	CLIENTOS_OTCLIENT_LINUX = 10,
+	CLIENTOS_OTCLIENT_WINDOWS = 11,
+	CLIENTOS_OTCLIENT_MAC = 12,								 
+	CLIENTOS_OTCLIENTV8_WINDOWS = 20								 
 };
 
 enum ReportType_t
@@ -225,8 +111,9 @@ enum MagicEffect_t
 	MAGIC_EFFECT_BATS = 66,
 	MAGIC_EFFECT_SMOKE = 67,
 	MAGIC_EFFECT_INSECTS = 68,
-	MAGIC_EFFECT_DRAGONHEAD = 0x7D0,
-	MAGIC_EFFECT_LAST = MAGIC_EFFECT_DRAGONHEAD,
+	MAGIC_EFFECT_DRAGONHEAD = 69,
+	MAGIC_EFFECT_SEMFIM = 0xFFFE, //65534
+	MAGIC_EFFECT_LAST = MAGIC_EFFECT_SEMFIM,
 
 	//for internal use, dont send to client
 	MAGIC_EFFECT_NONE = 0xFF,
@@ -276,8 +163,24 @@ enum ShootEffect_t
 	SHOOT_EFFECT_SMALLEARTH = 38,
 	SHOOT_EFFECT_EARTHARROW = 39,
 	SHOOT_EFFECT_EXPLOSION = 40,
-	SHOOT_EFFECT_CAKE = 0x7D0,
-	SHOOT_EFFECT_LAST = SHOOT_EFFECT_CAKE,
+	SHOOT_EFFECT_CAKE = 41,
+	SHOOT_EFFECT_KOTONKUNAI = 20,
+	SHOOT_EFFECT_KOTONDOTON = 35,
+	SHOOT_EFFECT_KOTONKATON = 13,
+	SHOOT_EFFECT_KOTONSUITON = 27,
+	SHOOT_EFFECT_KOTONRAITON = 24,
+	SHOOT_EFFECT_FLAMEPAPER = 63,
+	SHOOT_EFFECT_SUSANOBOW = 101,
+	SHOOT_EFFECT_ROYALDOTON = 36,
+	SHOOT_EFFECT_ROYALFUUTON = 95,
+	SHOOT_EFFECT_ROYALKATON = 112,
+	SHOOT_EFFECT_ROYALKUNAI = 113,
+	SHOOT_EFFECT_ROYALRAITON = 114,
+	SHOOT_EFFECT_ROYALSUITON = 115,
+	SHOOT_EFFECT_ENTONELEMENT = 125,
+	SHOOT_EFFECT_RIKKUDOUCETRO = 101,								  
+	SHOOT_EFFECT_SEMFIM = 0xFFFE, //65534
+	SHOOT_EFFECT_LAST = SHOOT_EFFECT_SEMFIM,
 
 	//for internal use, dont send to client
 	SHOOT_EFFECT_WEAPONTYPE = 0xFE, //254
@@ -472,48 +375,26 @@ const uint8_t fluidMap[] =
 enum Color_t
 {
 	COLOR_BLACK = 0,
-	COLOR_RANTON = 1,
 	COLOR_BLUE = 5,
-	COLOR_MOKUTON = 12,
-	COLOR_SUITON = 16,
 	COLOR_GREEN = 18,
-	COLOR_HYOTON = 35,
-	COLOR_DEATH = 41,
 	COLOR_LIGHTGREEN = 66,
-	COLOR_FUUTON = 69,
 	COLOR_DARKBROWN = 78,
 	COLOR_LIGHTBLUE = 89,
 	COLOR_MAYABLUE = 95,
-	COLOR_HOLLY = 101,
 	COLOR_DARKRED = 108,
-	COLOR_ENTON = 108,
 	COLOR_DARKPURPLE = 112,
-	COLOR_PHYSICAL = 112,
-	COLOR_DOTON = 114,
-	COLOR_SATETSU = 119,
 	COLOR_BROWN = 120,
-	COLOR_JINTON = 122,
 	COLOR_GREY = 129,
 	COLOR_TEAL = 143,
-	COLOR_FUTTON = 145,
-	COLOR_YOTON = 150,
 	COLOR_DARKPINK = 152,
-	COLOR_PURPLE = 154,
+	COLOR_PURPLE = 155,
 	COLOR_DARKORANGE = 156,
-	COLOR_DROWN = 179,
 	COLOR_RED = 180,
-	COLOR_TAIJUTSU = 181,
-	COLOR_SHAKUTON = 187,
 	COLOR_PINK = 190,
-	COLOR_BAKUTON = 192,
 	COLOR_ORANGE = 192,
-	COLOR_SHOTON = 203,
-	COLOR_SUNA = 205,
 	COLOR_DARKYELLOW = 205,
 	COLOR_YELLOW = 210,
-	COLOR_RAITON = 210,
 	COLOR_WHITE = 215,
-	COLOR_YANG = 215,
 	COLOR_NONE = 255,
 	COLOR_UNKNOWN = 256
 };
@@ -597,8 +478,7 @@ enum WieldInfo_t
 	WIELDINFO_LEVEL = 1,
 	WIELDINFO_MAGLV = 2,
 	WIELDINFO_VOCREQ = 4,
-	WIELDINFO_PREMIUM = 8,
-	WIELDINFO_UNIQUEITEM = 16
+	WIELDINFO_PREMIUM = 8
 };
 
 enum Skulls_t
@@ -783,8 +663,6 @@ struct MessageDetails
 #define PSTRG_OUTFITSID_RANGE_START (PSTRG_RESERVED_RANGE_START + 1500)
 #define PSTRG_OUTFITSID_RANGE_SIZE 500
 
-// #define NETWORK_CRYPTOHEADER_SIZE 8
-
 //[2000 - 2500]
 #define PSTRG_AURA_RANGE_START	(PSTRG_RESERVED_RANGE_START + 2000)
 #define PSTRG_AURA_RANGE_SIZE	500
@@ -797,10 +675,6 @@ struct MessageDetails
 #define PSTRG_SHADER_RANGE_START (PSTRG_RESERVED_RANGE_START + 3000)
 #define PSTRG_SHADER_RANGE_SIZE 500
 
-//[3000 - 3500]
-#define PSTRG_HEALTHBAR_RANGE_START (PSTRG_RESERVED_RANGE_START + 5000)
-#define PSTRG_HEALTHBAR_RANGE_SIZE 500
-
 //[3500 - 4000]
 #define PSTRG_HEALTHBG_RANGE_START (PSTRG_RESERVED_RANGE_START + 3500)
 #define PSTRG_HEALTHBG_RANGE_SIZE 500
@@ -808,8 +682,9 @@ struct MessageDetails
 //[4000 - 4500]
 #define PSTRG_MANABG_RANGE_START (PSTRG_RESERVED_RANGE_START + 4000)
 #define PSTRG_MANABG_RANGE_SIZE 500
+
 #define NETWORK_RETRY_TIMEOUT 5000
-#define NETWORK_DEFAULT_SIZE 4096
+#define NETWORK_SOCKET_SIZE 4096
 #define NETWORK_HEADER_SIZE 2
 #define NETWORK_CRYPTOHEADER_SIZE (NETWORK_HEADER_SIZE + 6)
 #define NETWORK_MAX_SIZE 65500
@@ -819,6 +694,7 @@ struct MessageDetails
 #define LOCALHOST 2130706433
 #define SWIMMING_OUTFIT 267
 #define GRATIS_PREMIUM 65535
+
 //outfits limit
 #define OUTFITS_MAX_NUMBER 3000
 

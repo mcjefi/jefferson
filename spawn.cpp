@@ -134,14 +134,14 @@ bool Spawns::parseSpawnNode(xmlNodePtr p, bool checkDuplicate)
 			int32_t interval = MINSPAWN_INTERVAL / 1000;
 			if(readXMLInteger(tmpNode, "spawntime", intValue) || readXMLInteger(tmpNode, "interval", intValue))
 			{
-				if (intValue + g_config.getNumber(ConfigManager::SPAWN_TIME) <= interval)
+				if(intValue <= interval)
 				{
 					std::clog << "[Warning - Spawns::loadFromXml] " << name << " " << centerPos << " spawntime cannot"
 						<< " be less or equal than " << interval << " seconds." << std::endl;
 					continue;
 				}
 
-				interval = intValue + g_config.getNumber(ConfigManager::SPAWN_TIME);
+				interval = intValue;
 			}
 
 			interval *= 1000;
@@ -266,7 +266,7 @@ bool Spawn::findPlayer(const Position& pos)
 	SpectatorVec list;
 	g_game.getSpectators(list, pos, false, true);
 	for (Creature* spectator : list) {
-		if(!spectator->getPlayer()->hasFlag(PlayerFlag_IgnoredByMonsters))
+		if (!spectator->getPlayer()->hasFlag(PlayerFlag_IgnoredByMonsters))
 			return true;
 	}
 	return false;
@@ -345,19 +345,13 @@ void Spawn::checkSpawn()
 		if(OTSYS_TIME() < sb.lastSpawn + sb.interval)
 			continue;
 
-		if (!g_config.getBool(ConfigManager::ALLOW_BLOCK_SPAWN))
+		if(g_config.getBool(ConfigManager::ALLOW_BLOCK_SPAWN) && findPlayer(sb.pos))
 		{
-			if (sb.mType->playerblockspawn && findPlayer(sb.pos))
-			{
-				sb.lastSpawn = OTSYS_TIME();
-				continue;
-			}
-			else
-				startEffect(it->first, sb.mType, sb.pos, sb.direction, 0);
+			sb.lastSpawn = OTSYS_TIME();
+			continue;
 		}
-		else
-			spawnMonster(it->first, sb.mType, sb.pos, sb.direction);
 
+		spawnMonster(it->first, sb.mType, sb.pos, sb.direction);
 		uint32_t minSpawnCount = g_config.getNumber(ConfigManager::RATE_SPAWN_MIN),
 			maxSpawnCount = g_config.getNumber(ConfigManager::RATE_SPAWN_MAX);
 		if(++spawnCount >= (uint32_t)random_range(minSpawnCount, maxSpawnCount))
@@ -370,21 +364,6 @@ void Spawn::checkSpawn()
 	else
 		std::clog << "[Notice] Spawn::checkSpawn stopped " << this << std::endl;
 #endif
-}
-
-void Spawn::startEffect(uint32_t spawnId, MonsterType * mType, const Position & pos, Direction dir, uint8_t count)
-{
-	if (count >= 12)
-	{
-		spawnMonster(spawnId, mType, pos, dir);
-		return;
-	}
-	else
-	{
-		g_game.addMagicEffect(pos, 10);
-		Scheduler::getInstance().addEvent(createSchedulerTask(1000 - count * 60, boost::bind(&Spawn::startEffect, this, spawnId, mType, pos, dir, count + 1)));
-	}
-
 }
 
 bool Spawn::addMonster(const std::string& _name, const Position& _pos, Direction _dir, uint32_t _interval)

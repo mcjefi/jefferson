@@ -34,12 +34,9 @@
 #include "ioguild.h"
 #include "party.h"
 #include "npc.h"
-#include "localization.h"
 #include "auras.h"
 #include "wings.h"
 #include "shaders.h"
-#include "healthbars.h"
-#include "item.h"
 
 class House;
 class Weapon;
@@ -129,8 +126,8 @@ typedef std::list<uint32_t> InvitationsList;
 typedef std::list<Party*> PartyList;
 typedef std::map<uint32_t, War_t> WarMap;
 
-#define SPEED_MAX 15000
-#define SPEED_MIN 10
+#define SPEED_MAX 800
+#define SPEED_MIN 800
 #define STAMINA_MAX (42 * 60 * 60 * 1000)
 #define STAMINA_MULTIPLIER (60 * 1000)
 
@@ -146,9 +143,14 @@ class Player : public Creature, public Cylinder
 		virtual Player* getPlayer() {return this;}
 		virtual const Player* getPlayer() const {return this;}
 		virtual CreatureType_t getType() const {return CREATURETYPE_PLAYER;}
-
-		ProtocolGame_ptr p_protocol;
-
+		
+		void setID() override
+		{
+			if(id == 0) {
+				id = playerAutoID++;
+			}
+		}
+		
 		static MuteCountMap muteCountMap;
 
 		virtual const std::string& getName() const {return name;}
@@ -164,14 +166,9 @@ class Player : public Creature, public Cylinder
 
 		void setGUID(uint32_t _guid) {guid = _guid;}
 		uint32_t getGUID() const {return guid;}
-
-		void setID() final {
-			if (id == 0) {
-				id = playerAutoID++;
-			}
-		}
-
+	
 		static AutoList<Player> autoList;
+		virtual uint32_t rangeId() {return PLAYER_ID_RANGE;}
 		static bool sort(Player* lhs, Player* rhs) {return lhs->getName() < rhs->getName();}
 
 		void addList();
@@ -190,18 +187,8 @@ class Player : public Creature, public Cylinder
 			cache[lv] = exp;
 			return exp;
 		}
-		// Auto Loot
-		void addAutoLoot(int itemId);
-		bool checkAutoLoot(int itemId) const;
-		void removeAutoLoot(int itemId);
-		int getAutoLoot() const;
-		bool isMoneyAutoLoot() const;
-		int limitAutoLoot;
 
 		bool addOfflineTrainingTries(skills_t skill, int32_t tries);
-
-		void setSpectating(bool value) { is_spectating = value; };
-		bool isSpectating() { return is_spectating; };
 
 		void addOfflineTrainingTime(int32_t addTime) {offlineTrainingTime = std::min(12 * 3600 * 1000, offlineTrainingTime + addTime);}
 		void removeOfflineTrainingTime(int32_t removeTime) {offlineTrainingTime = std::max(0, offlineTrainingTime - removeTime);}
@@ -266,20 +253,6 @@ class Player : public Creature, public Cylinder
 		void setOperatingSystem(OperatingSystem_t os) {operatingSystem = os;}
 		uint32_t getClientVersion() const {return clientVersion;}
 		void setClientVersion(uint32_t version) {clientVersion = version;}
-				
-		// Wonsr		
-		LocalizationLang_t getLanguage() const {return language;}
-		void setLanguage(LocalizationLang_t _language) {language = _language;}
-		
-		double getExtraLootChance() const {return extraLootChance;}
-		void setExtraLootChance(double value) {extraLootChance = value;}
-		
-		float getExtraExpRate() const {return extraExpRate;}
-        void setExtraExpRate(float value) {extraExpRate = value;}
-		
-		double getExtraRareLootRate() const {return extraRareLootRate;}
-		void setExtraRareLootRate(double value) {extraRareLootRate = value;}
-		//
 
 		bool hasClient() const {return (client->getOwner() != NULL);}
 		bool isVirtual() const {return (getID() == 0);}
@@ -326,6 +299,10 @@ class Player : public Creature, public Cylinder
 		uint32_t getMagicLevel() const {return getPlayerInfo(PLAYERINFO_MAGICLEVEL);}
 		uint32_t getBaseMagicLevel() const {return magLevel;}
 		uint64_t getSpentMana() const {return manaSpent;}
+		uint32_t getKawaramiChance() const;							 
+
+		uint32_t getExtraAttackSpeed() const {return extraAttackSpeed;}
+		void setPlayerExtraAttackSpeed(uint32_t speed);
 
 		bool isPremium() const;
 		int32_t getPremiumDays() const {return premiumDays;}
@@ -345,6 +322,10 @@ class Player : public Creature, public Cylinder
 		void setVocation(uint32_t id);
 		uint16_t getSex(bool full) const {return full ? sex : sex % 2;}
 		void setSex(uint16_t);
+
+		// Player Stats
+		uint16_t getStatsHealingValue() const {return statsHealingValue;}
+		void setStatsHealingValue(uint16_t);
 
 		virtual void setDropLoot(lootDrop_t _lootDrop);
 		virtual void setLossSkill(bool _skillLoss);
@@ -414,7 +395,8 @@ class Player : public Creature, public Cylinder
 
 		bool hasSentChat() const {return sentChat;}
 		void setSentChat(bool sending) {sentChat = sending;}
-
+		bool getLoot() const {return showLoot;}
+		void setGetLoot(bool b) {showLoot = b;}
 		virtual RaceType_t getRace() const {return RACE_BLOOD;}
 
 		//safe-trade functions
@@ -502,6 +484,7 @@ class Player : public Creature, public Cylinder
 		void setLastAttack(uint64_t time) {lastAttack = time;}
 
 		int32_t getSkill(skills_t skilltype, skillsid_t skillinfo) const;
+		void addSkillAdvance2(skills_t skill, uint64_t count, bool useMultiplier/* = true*/);
 		bool getAddAttackSkill() const {return addAttackSkillPoint;}
 		BlockType_t getLastAttackBlockType() const {return lastAttackBlockType;}
 
@@ -521,8 +504,8 @@ class Player : public Creature, public Cylinder
 		void addSkillAdvance(skills_t skill, uint64_t count, bool useMultiplier = true);
 		bool addUnjustifiedKill(const Player* attacked, bool countNow);
 
-        virtual int32_t getCriticalHitChance() const;
 		virtual int32_t getArmor() const;
+		virtual int32_t getCriticalHitChance() const;
 		virtual int32_t getDefense() const;
 		virtual float getAttackFactor() const;
 		virtual float getDefenseFactor() const;
@@ -535,9 +518,9 @@ class Player : public Creature, public Cylinder
 		//combat event functions
 		virtual void onAddCondition(ConditionType_t type, bool hadCondition);
 		virtual void onAddCombatCondition(ConditionType_t type, bool hadCondition);
-		virtual void onEndCondition(ConditionType_t type);
+		virtual void onEndCondition(ConditionType_t type, ConditionId_t id);
 		virtual void onCombatRemoveCondition(const Creature* attacker, Condition* condition);
-		virtual void onTickCondition(ConditionType_t type, int32_t interval, bool& _remove);
+		virtual void onTickCondition(ConditionType_t type, ConditionId_t id, int32_t interval, bool& _remove);
 		virtual void onTarget(Creature* target);
 		virtual void onSummonTarget(Creature* summon, Creature* target);
 		virtual void onAttacked();
@@ -584,6 +567,7 @@ class Player : public Creature, public Cylinder
 		bool addShader(uint32_t shaderId);
 		bool removeShader(uint32_t shaderId);
 		bool canWearShader(uint32_t shaderId);
+
 		bool addHealthBackground(uint32_t healthBgId);
 		bool removeHealthBackground(uint32_t healthBgId);
 		bool canWearHealthBackground(uint32_t healthBgId);
@@ -635,8 +619,8 @@ class Player : public Creature, public Cylinder
 		void sendCreatureWalkthrough(const Creature* creature, bool walkthrough)
 			{if(client) client->sendCreatureWalkthrough(creature, walkthrough);}
 
-		void sendExtendedOpcode(uint8_t opcode, const std::string& buffer) {
-			if (client) client->sendExtendedOpcode(opcode, buffer);}
+		void sendExtendedOpcode(uint8_t opcode, const std::string& buffer)
+			{if(client) client->sendExtendedOpcode(opcode, buffer);}
 
 		//container
 		void sendAddContainerItem(const Container* container, const Item* item);
@@ -697,7 +681,7 @@ class Player : public Creature, public Cylinder
 		void onRemoveInventoryItem(slots_t slot, Item* item);
 
 		void sendCancel(const std::string& msg) const
-			{if(client) client->sendCancel(Localization::t(language, msg));}
+			{if(client) client->sendCancel(msg);}
 		void sendCancelMessage(ReturnValue message) const;
 		void sendCancelTarget() const
 			{if(client) client->sendCancelTarget();}
@@ -707,7 +691,7 @@ class Player : public Creature, public Cylinder
 			{if(client) client->sendChangeSpeed(creature, newSpeed);}
 		void sendCreatureHealth(const Creature* creature) const
 			{if(client) client->sendCreatureHealth(creature);}
-		void sendDistanceShoot(const Position& from, const Position& to, uint8_t type) const
+		void sendDistanceShoot(const Position& from, const Position& to, uint16_t type) const
 			{if(client) client->sendDistanceShoot(from, to, type);}
 		void sendHouseWindow(House* house, uint32_t listId) const;
 		void sendOutfitWindow() const {if(client) client->sendOutfitWindow();}
@@ -716,7 +700,7 @@ class Player : public Creature, public Cylinder
 		void sendCreatureSkull(const Creature* creature) const
 			{if(client) client->sendCreatureSkull(creature);}
 		void sendFYIBox(std::string message)
-			{if(client) client->sendFYIBox(Localization::t(language, message));}
+			{if(client) client->sendFYIBox(message);}
 		void sendCreatePrivateChannel(uint16_t channelId, const std::string& channelName)
 			{if(client) client->sendCreatePrivateChannel(channelId, channelName);}
 		void sendClosePrivate(uint16_t channelId) const
@@ -724,12 +708,12 @@ class Player : public Creature, public Cylinder
 		void sendIcons() const;
 		void sendMagicEffect(const Position& pos, uint16_t type) const
 			{if(client) client->sendMagicEffect(pos, type);}
-		void sendAnimatedText(const Position& pos, uint16_t color, const std::string& text) const
+		void sendAnimatedText(const Position& pos, uint8_t color, const std::string& text) const
 			{if(client) client->sendAnimatedText(pos, color, text);}
 		void sendSkills() const
 			{if(client) client->sendSkills();}
 		void sendTextMessage(MessageClasses type, const std::string& message) const
-			{if(client) client->sendTextMessage(type, Localization::t(language, message));}
+			{if(client) client->sendTextMessage(type, message);}
 		void sendStatsMessage(MessageClasses type, const std::string& message, Position pos, MessageDetails* details = NULL) const
 			{if(client) client->sendStatsMessage(type, message, pos, details);}
 		void sendReLoginWindow() const
@@ -805,13 +789,31 @@ class Player : public Creature, public Cylinder
 		void unlearnInstantSpell(const std::string& name);
 		bool hasLearnedInstantSpell(const std::string& name) const;
 		
-		// Auto Loot
-		void addAutoLootItem(const std::string& name);
-		void removeAutoLootItem(const std::string& name);
-
-		void setEnabledAutoLoot(bool option);
-		bool getEnabledAutoLoot();
-
+		//Autoloot by: Naze
+		std::list<uint16_t> getAutoLoot() {
+			return AutoLoot;
+		}
+		void clearAutoLoot() {
+			AutoLoot.clear();
+		}
+		void addAutoLoot(uint16_t id);
+		void removeAutoLoot(uint16_t id);
+		bool limitAutoLoot();
+		bool checkAutoLoot(uint16_t id);
+		bool isMoneyAutoLoot(Item* item, uint32_t& count);
+		std::string statusAutoLoot() {
+			return (autoLootStatus ? "On" : "Off");
+		}
+		void updateStatusAutoLoot(bool status){
+			autoLootStatus = status;
+		}
+		std::string statusAutoMoneyCollect() {
+			return (autoMoneyCollect ? "Bank" : "Bag");
+		}
+		void updateMoneyCollect(bool status) {
+			autoMoneyCollect = status;
+		}
+		
 		VIPSet VIPList;
 		ContainerVector containerVec;
 		InvitationsList invitationsList;
@@ -825,8 +827,7 @@ class Player : public Creature, public Cylinder
 		double rates[SKILL__LAST + 1];
 
 	protected:
-		static uint32_t playerAutoID;
-
+		// static uint32_t playerAutoID;						   
 		void checkTradeState(const Item* item);
 		void internalAddDepot(Depot* depot, uint32_t depotId);
 
@@ -839,9 +840,9 @@ class Player : public Creature, public Cylinder
 		void updateWeapon();
 		void updateBaseSpeed()
 		{
-			if(!hasFlag(PlayerFlag_SetMaxSpeed))
-				baseSpeed = vocation->getBaseSpeed() + (vocation->getRateSpeed() * (level));
-			else
+			// if(!hasFlag(PlayerFlag_SetMaxSpeed))
+				// baseSpeed = vocation->getBaseSpeed() + (2 * (level - 1));
+			// else
 				baseSpeed = SPEED_MAX;
 		}
 
@@ -882,8 +883,8 @@ class Player : public Creature, public Cylinder
 		virtual void __internalAddThing(Thing* thing);
 		virtual void __internalAddThing(uint32_t index, Thing* thing);
 
-		uint32_t getVocAttackSpeed() const {return vocation->getAttackSpeed();}
-		virtual int32_t getStepSpeed() const
+		uint32_t getVocAttackSpeed() const {return vocation->getAttackSpeed() - getPlayer()->getExtraAttackSpeed();}
+		int32_t getStepSpeed() const override
 		{
 			if(getSpeed() > SPEED_MAX)
 				return SPEED_MAX;
@@ -892,8 +893,9 @@ class Player : public Creature, public Cylinder
 				return SPEED_MIN;
 
 			return getSpeed();
-		}
 
+		}
+	  
 		virtual uint32_t getDamageImmunities() const {return damageImmunities;}
 		virtual uint32_t getConditionImmunities() const {return conditionImmunities;}
 		virtual uint32_t getConditionSuppressions() const {return conditionSuppressions;}
@@ -906,10 +908,11 @@ class Player : public Creature, public Cylinder
 
 		bool isPromoted(uint32_t pLevel = 1) const {return promotionLevel >= pLevel;}
 		bool hasCapacity(const Item* item, uint32_t count) const;
-		
 
 	private:
-		bool is_spectating;
+		bool autoLootStatus; //autoloot by naze
+		bool autoMoneyCollect; //autoloot by naze
+		std::list<uint16_t> AutoLoot; //autoloot by naze
 		bool talkState[13];
 		bool inventoryAbilities[SLOT_LAST];
 		bool pzLocked;
@@ -920,10 +923,8 @@ class Player : public Creature, public Cylinder
 		bool addAttackSkillPoint;
 		bool pvpBlessing;
 		bool sentChat;
-		bool autoLootStatus; // seu bool para ativar autoloot
-		bool autoMoneyCollect;
-		std::list<uint16_t> autoLoot; // nome min�sculo e camelCase
-
+		bool showLoot;
+		static uint32_t playerAutoID;
 
 		OperatingSystem_t operatingSystem;
 		AccountManager_t accountManager;
@@ -934,13 +935,15 @@ class Player : public Creature, public Cylinder
 		secureMode_t secureMode;
 		tradestate_t tradeState;
 		GuildLevel_t guildLevel;
-		LocalizationLang_t language;
 
 		int16_t blessings;
 		uint16_t maxWriteLen;
 		uint16_t sex;
 		uint16_t mailAttempts;
 		uint16_t lastStatsTrainingTime;
+
+		// Player Stats
+		uint16_t statsHealingValue;
 
 		int32_t premiumDays;
 		int32_t soul;
@@ -961,6 +964,7 @@ class Player : public Creature, public Cylinder
 		uint32_t clientVersion;
 		uint32_t messageTicks;
 		uint32_t idleTime;
+		uint32_t extraAttackSpeed;
 		uint32_t accountId;
 		uint32_t lastIP;
 		uint32_t level;
@@ -1001,9 +1005,6 @@ class Player : public Creature, public Cylinder
 		double inventoryWeight;
 		double capacity;
 		char managerChar[100];
-		float extraExpRate;
-		double extraLootChance;
-		float extraRareLootRate;
 
 		std::string managerString, managerString2;
 		std::string account, password;
@@ -1037,31 +1038,18 @@ class Player : public Creature, public Cylinder
 		std::map<uint32_t, Wing*> wings;
 		std::map<uint32_t, Aura*> auras;
 		std::map<uint32_t, Shader*> shaders;
-		std::map<uint32_t, HealthBar*> healthBar;
-		std::map<uint32_t, uint32_t> healthBgs; // not in use (???)
+		std::map<uint32_t, uint32_t> healthBgs;
 		std::map<uint32_t, uint32_t> manaBgs;
 		LearnedInstantSpellList learnedInstantSpellList;
 		WarMap warMap;
 
-		public:
-			// Auto Loot
-			std::list<std::string> loot;
-			bool lootEnabled;
-			bool getAutoMoneyCollect() const { return autoMoneyCollect; }
-			int getWings() const {
-				if (!wings.empty()) {
-					return wings.begin()->first;
-				}
-				return 0;
-			}
-
-			friend class Game;
-			friend class LuaInterface;
-			friend class Npc;
-			friend class Actions;
-			friend class IOLoginData;
-			friend class ProtocolGame;
-			friend class ProtocolLogin;
-			friend class Spectators;
+		friend class Game;
+		friend class LuaInterface;
+		friend class Npc;
+		friend class Actions;
+		friend class IOLoginData;
+		friend class ProtocolGame;
+		friend class ProtocolLogin;
+		friend class Spectators;
 };
 #endif

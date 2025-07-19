@@ -67,13 +67,14 @@ class IOLoginData
 		bool validRecoveryKey(uint32_t accountId, std::string recoveryKey);
 		bool setRecoveryKey(uint32_t accountId, std::string newRecoveryKey);
 
-		uint64_t createAccount(std::string name, std::string password, uint32_t clientIp);
+		uint64_t createAccount(std::string name, std::string password);
 		void removePremium(Account& account);
 
 		const Group* getPlayerGroupByAccount(uint32_t accountId);
 
 		bool loadPlayer(Player* player, const std::string& name, bool preLoad = false);
 		bool savePlayer(Player* player, bool preSave = true, bool shallow = false);
+		bool savePlayerItems(Player* player);
 
 		bool playerStatement(Player* _player, uint16_t channelId, const std::string& text, uint32_t& statementId);
 		bool playerDeath(Player* _player, const DeathList& dl);
@@ -104,9 +105,6 @@ class IOLoginData
 
 		bool getUnjustifiedDates(uint32_t guid, std::vector<time_t>& dateList, time_t _time);
 		bool getDefaultTownByName(const std::string& name, uint32_t& townId);
-		
-		LocalizationLang_t getAccountLanguage(uint32_t accountId);
-		bool setAccountLanguage(uint32_t accountId, LocalizationLang_t languageId);
 
 		bool updatePremiumDays();
 		bool updateOnlineStatus(uint32_t guid, bool login);
@@ -131,7 +129,7 @@ class IOLoginData
 		typedef std::map<int32_t, std::pair<Item*, int32_t> > ItemMap;
 
 		bool saveItems(const Player* player, const ItemBlockList& itemList, DBInsert& query_insert);
-		void loadItems(ItemMap& itemMap, DBResult_ptr result);
+		void loadItems(ItemMap& itemMap, DBResult* result);
 
 		void loadCharacters(Account& account);
 		bool storeNameByGuid(uint32_t guid);

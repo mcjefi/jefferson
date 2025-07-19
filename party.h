@@ -48,14 +48,14 @@ class Party
 		void updateAllIcons();
 		void updateIcons(Player* player);
 		void broadcastMessage(MessageClasses messageClass, const std::string& text, bool sendToInvitations = false);
-
+		void broadcastPartyLoot(MessageClasses messageClass, const std::string& loot);
+		
 		void shareExperience(double experience, Creature* target, bool multiplied);
 		bool setSharedExperience(Player* player, bool _sharedExpActive);
 		bool isSharedExperienceActive() const {return sharedExpActive;}
 		bool isSharedExperienceEnabled() const {return sharedExpEnabled;}
 		bool canUseSharedExperience(const Player* player, uint32_t highestLevel = 0) const;
 		void updateSharedExperience();
-		void updateExperienceMult();
 
 		void addPlayerHealedMember(Player* player, uint32_t points);
 		void addPlayerDamageMonster(Player* player, uint32_t points);
@@ -70,7 +70,6 @@ class Party
 
 		PlayerVector memberList;
 		PlayerVector inviteList;
-		double currentExpMultiplier;
 
 		Player* leader;
 		bool sharedExpActive, sharedExpEnabled;
